@@ -413,14 +413,14 @@ body {
   transition: all var(--transition-fast) !important;
 }
 
-.ant-btn:not(.ant-btn-primary):not(.ant-btn-dangerous):not(.ant-btn-link):not(.ant-btn-text) {
+.ant-btn:not(.ant-btn-primary):not(.ant-btn-dangerous):not(.ant-btn-link):not(.ant-btn-text):not(.neon-glow-btn):not(.ant-btn-background-ghost):not(.ant-btn-dashed):not(.ant-btn-disabled):not([disabled]) {
   background: linear-gradient(180deg, rgba(25, 31, 43, 0.92), rgba(17, 22, 31, 0.94)) !important;
   border-color: var(--color-border-default) !important;
   color: var(--color-text-secondary) !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
-.ant-btn:not(.ant-btn-primary):not(.ant-btn-dangerous):not(.ant-btn-link):not(.ant-btn-text):hover {
+.ant-btn:not(.ant-btn-primary):not(.ant-btn-dangerous):not(.ant-btn-link):not(.ant-btn-text):not(.neon-glow-btn):not(.ant-btn-background-ghost):not(.ant-btn-dashed):not(.ant-btn-disabled):not([disabled]):hover {
   background: linear-gradient(180deg, rgba(32, 40, 55, 0.98), rgba(18, 24, 35, 0.98)) !important;
   border-color: var(--color-border-hover) !important;
   color: var(--color-text-primary) !important;
@@ -575,20 +575,6 @@ button.ant-btn-primary:hover {
 /* 画布缩放 — 严禁 transition:transform */
 .react-flow__viewport {
   /* ReactFlow JS 引擎直接管理 transform */
-}
-
-/* Ant Design Primary 按钮 */
-button.ant-btn-primary {
-  background: var(--color-neon-green) !important;
-  border: none !important;
-  border-radius: 8px !important;
-  color: #0d1117 !important;
-  font-weight: 600 !important;
-  transition: background 0.15s ease, box-shadow 0.15s ease;
-}
-button.ant-btn-primary:hover {
-  background: #2ea44f !important;
-  box-shadow: 0 2px 8px rgba(63,185,80,0.35);
 }
 
 /* ===== 节点入场动画 ===== */
