@@ -127,11 +127,14 @@ class TextVisionClient:
 
         body = {
             "contents": [{"parts": parts}],
+            "thinking-level": "low" if thinking_mode == "minimal" else (thinking_mode or "low"),
             "generationConfig": {"temperature": temperature},
         }
         url = f"{self.base_url}/v1beta/models/{model}:generateContent?key={self.api_key}"
-        headers = {"Content-Type": "application/json",
-                   "thinking-level": "low" if thinking_mode == "minimal" else (thinking_mode or "low")}
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
         r = self._session.post(url, headers=headers, json=body, timeout=(30, 600))
         if r.status_code != 200:
             raise Exception(f"Gemini 视觉 HTTP {r.status_code}: {r.text[:300]}")
