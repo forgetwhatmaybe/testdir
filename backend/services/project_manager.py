@@ -1,0 +1,93 @@
+"""项目管理：在所有可用磁盘的 AIVIDEO 文件夹下扫描/创建/读取。"""
+from __future__ import annotations
+
+import json
+import shutil
+import string
+from pathlib import Path
+
+from config import PROJECTS_INDEX_PATH, ROOT_FOLDER_NAME
+
+
+def list_disks() -> list[str]:
+    disks: list[str] = []
+    for letter in string.ascii_uppercase:
+        root = Path(f"{letter}:/")
+        if root.exists():
+            disks.append(letter)
+    return disks
+
+
+def project_root(disk: str, name: str) -> Path:
+    return Path(f"{disk.upper()}:/") / ROOT_FOLDER_NAME / name
+
+
+def list_projects() -> list[dict]:
+    projects: list[dict] = []
+    seen: set[str] = set()
+    for letter in list_disks():
+        base = Path(f"{letter}:/") / ROOT_FOLDER_NAME
+        if not base.exists():
+            continue
+        for child in base.iterdir():
+            if child.is_dir() and child.name not in seen:
+                projects.append({
+                    "name": child.name,
+                    "path": str(child),
+                    "disk": letter,
+                })
+                seen.add(child.name)
+    return projects
+
+
+def create_project(disk: str, name: str) -> dict:
+    root = project_root(disk, name)
+    if root.exists():
+        raise FileExistsError(f"项目已存在: {root}")
+    (root / "素材库").mkdir(parents=True, exist_ok=True)
+    (root / "workflows").mkdir(parents=True, exist_ok=True)
+    workflow_path = root / "workflow.json"
+    if not workflow_path.exists():
+        workflow_path.write_text(json.dumps({
+            "version": 2,
+            "viewport": {"x": 0, "y": 0, "zoom": 1},
+            "nodes": [],
+            "edges": []
+        }, ensure_ascii=False, indent=2), encoding="utf-8")
+    return {"name": name, "path": str(root), "disk": disk}
+
+
+def find_project(name: str) -> Path:
+    for letter in list_disks():
+        candidate = Path(f"{letter}:/") / ROOT_FOLDER_NAME / name
+        if candidate.exists():
+            return candidate
+    raise FileNotFoundError(f"项目不存在: {name}")
+
+
+def remove_from_index(name: str) -> None:
+    index = []
+    if PROJECTS_INDEX_PATH.exists():
+        try:
+            index = json.loads(PROJECTS_INDEX_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            index = []
+    index = [n for n in index if n != name]
+    PROJECTS_INDEX_PATH.write_text(json.dumps(index, ensure_ascii=False), encoding="utf-8")
+
+
+def load_workflow(name: str) -> dict:
+    root = find_project(name)
+    wf_path = root / "workflow.json"
+    if not wf_path.exists():
+        return {"version": 2, "viewport": {"x": 0, "y": 0, "zoom": 1}, "nodes": [], "edges": []}
+    try:
+        return json.loads(wf_path.read_text(encoding="utf-8"))
+    except Exception:
+        return {"version": 2, "viewport": {"x": 0, "y": 0, "zoom": 1}, "nodes": [], "edges": []}
+
+
+def save_workflow(name: str, workflow: dict) -> None:
+    root = find_project(name)
+    wf_path = root / "workflow.json"
+    wf_path.write_text(json.dumps(workflow, ensure_ascii=False, indent=2), encoding="utf-8")

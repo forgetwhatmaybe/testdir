@@ -1,0 +1,81 @@
+/* NeonButton 霓虹按钮 —— 4 色主题 + hover 波纹 + 光晕脉冲 */
+
+.neon-glow-btn {
+  position: relative;
+  background: rgba(20, 20, 30, 0.7) !important;
+  border: 1px solid var(--neon-border, #a78bfa) !important;
+  color: var(--neon-text, #c4b5fd) !important;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.neon-glow-btn::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: var(--neon-glow, rgba(167, 139, 250, 0.4));
+  filter: blur(8px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.neon-glow-btn:hover::before {
+  opacity: 1;
+}
+
+.neon-glow-btn:hover {
+  background: rgba(30, 25, 50, 0.9) !important;
+  border-color: var(--neon-border) !important;
+  color: #fff !important;
+  box-shadow:
+    0 0 12px var(--neon-glow),
+    0 0 24px var(--neon-glow),
+    inset 0 0 8px rgba(255, 255, 255, 0.03);
+  transform: translateY(-1px);
+}
+
+.neon-glow-btn:active {
+  transform: translateY(0);
+  transition: transform 0.1s;
+}
+
+/* Ripple 波纹效果 */
+.neon-glow-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.6s ease-out, height 0.6s ease-out, opacity 0.6s ease-out;
+  pointer-events: none;
+}
+
+.neon-glow-btn:active::after {
+  width: 300px;
+  height: 300px;
+  opacity: 0;
+  transition: 0s;
+}
+
+.neon-glow-btn:disabled {
+  opacity: 0.35 !important;
+  cursor: not-allowed;
+}
+
+.neon-glow-btn:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.neon-glow-btn:disabled::before,
+.neon-glow-btn:disabled::after {
+  display: none;
+}

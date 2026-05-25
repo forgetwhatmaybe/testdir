@@ -1,0 +1,47 @@
+[
+  {
+    "id": "basic_i2v",
+    "name": "基础图生视频",
+    "nodes": [
+      {"id": "n1", "type": "image", "position": {"x": 0, "y": 0}, "data": {}},
+      {"id": "n2", "type": "kling", "position": {"x": 320, "y": 0}, "data": {"model": "kling-v3", "mode": "image2video", "duration": 5, "resolution": "1080p", "cfg_scale": 0.5, "prompt": ""}},
+      {"id": "n3", "type": "output", "position": {"x": 640, "y": 0}, "data": {"name": "output_1"}}
+    ],
+    "edges": [
+      {"id": "e1", "source": "n1", "sourceHandle": "out", "target": "n2", "targetHandle": "in_image"},
+      {"id": "e2", "source": "n2", "sourceHandle": "out", "target": "n3", "targetHandle": "in"}
+    ]
+  },
+  {
+    "id": "first_last_frame",
+    "name": "首尾帧过渡",
+    "nodes": [
+      {"id": "n1", "type": "image", "position": {"x": 0, "y": 0}, "data": {}},
+      {"id": "n2", "type": "image", "position": {"x": 0, "y": 220}, "data": {}},
+      {"id": "n3", "type": "kling", "position": {"x": 320, "y": 110}, "data": {"model": "kling-v3", "mode": "first_last", "duration": 5, "resolution": "1080p", "cfg_scale": 0.5, "prompt": ""}},
+      {"id": "n4", "type": "output", "position": {"x": 640, "y": 110}, "data": {"name": "output_1"}}
+    ],
+    "edges": [
+      {"id": "e1", "source": "n1", "sourceHandle": "out", "target": "n3", "targetHandle": "in_first"},
+      {"id": "e2", "source": "n2", "sourceHandle": "out", "target": "n3", "targetHandle": "in_last"},
+      {"id": "e3", "source": "n3", "sourceHandle": "out", "target": "n4", "targetHandle": "in"}
+    ]
+  },
+  {
+    "id": "dual_compare",
+    "name": "双模型对比",
+    "nodes": [
+      {"id": "n1", "type": "image", "position": {"x": 0, "y": 110}, "data": {}},
+      {"id": "n2", "type": "kling", "position": {"x": 320, "y": 0}, "data": {"model": "kling-v3", "mode": "image2video", "duration": 5, "resolution": "1080p", "cfg_scale": 0.5, "prompt": ""}},
+      {"id": "n3", "type": "jimeng", "position": {"x": 320, "y": 220}, "data": {"model": "jimeng_v30", "mode": "image2video", "duration": 5, "resolution": "720P", "seed": -1, "prompt": ""}},
+      {"id": "n4", "type": "output", "position": {"x": 640, "y": 0}, "data": {"name": "output_1"}},
+      {"id": "n5", "type": "output", "position": {"x": 640, "y": 220}, "data": {"name": "output_2"}}
+    ],
+    "edges": [
+      {"id": "e1", "source": "n1", "sourceHandle": "out", "target": "n2", "targetHandle": "in_image"},
+      {"id": "e2", "source": "n1", "sourceHandle": "out", "target": "n3", "targetHandle": "in_image"},
+      {"id": "e3", "source": "n2", "sourceHandle": "out", "target": "n4", "targetHandle": "in"},
+      {"id": "e4", "source": "n3", "sourceHandle": "out", "target": "n5", "targetHandle": "in"}
+    ]
+  }
+]

@@ -1,0 +1,74 @@
+/* HologramCard 全息 3D 视差卡片 + 扫描线 */
+
+.holo-card {
+  position: relative;
+  border-radius: 16px;
+  background: rgba(18, 18, 28, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  transform: perspective(800px) rotateX(var(--holo-rot-x, 0deg)) rotateY(var(--holo-rot-y, 0deg));
+  transform-style: preserve-3d;
+  transition: transform 0.15s ease-out, box-shadow 0.3s ease;
+  overflow: hidden;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.holo-card:hover {
+  box-shadow:
+    0 8px 40px rgba(0, 0, 0, 0.5),
+    0 0 60px rgba(139, 92, 246, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* 扫描线 */
+.holo-card-scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(139, 92, 246, 0.4),
+    rgba(96, 165, 250, 0.4),
+    transparent
+  );
+  animation: holoScan 4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes holoScan {
+  0%, 100% { top: -10%; opacity: 0; }
+  15% { opacity: 0.8; }
+  85% { opacity: 0.8; }
+  100% { top: 110%; }
+}
+
+/* 光泽跟随鼠标 */
+.holo-card-glare {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle 200px at var(--holo-glow-x, 50%) var(--holo-glow-y, 50%),
+    rgba(139, 92, 246, 0.12),
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.holo-card:hover .holo-card-glare {
+  opacity: 1;
+}
+
+/* 内容层 */
+.holo-card-content {
+  position: relative;
+  z-index: 3;
+}
