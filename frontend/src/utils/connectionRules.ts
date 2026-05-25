@@ -13,6 +13,7 @@ export const NODE_OUTPUT_KINDS: Record<string, Record<string, HandleKind>> = {
   seedance2:    { out: 'video' },
   gemini:       { out: 'image' },
   image_edit:   { out: 'image' },
+  storyboard:   { out: 'image' },
   text_vision:  { out: 'text' },
   text_display: { out: 'text' },
   output:       { out: 'video' },  // 链式：上游决定
@@ -28,6 +29,7 @@ export const NODE_INPUT_KINDS: Record<string, Record<string, HandleKind>> = {
   },
   gemini:       { in_refs: 'refs_image' },
   image_edit:   { in_image: 'image', in_mask: 'mask' },
+  storyboard:   { in: 'image' },
   text_vision:  { in_image: 'refs_image' },
   text_display: { in_text: 'text' },
   output:       { in: 'image' },  // 接受任意（在校验里特例）

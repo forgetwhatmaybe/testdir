@@ -55,7 +55,7 @@ export default function ProjectListPage() {
         <section className="project-index-hero">
           <header className="project-index-header">
             <div className="project-index-copy">
-              <p className="project-index-eyebrow">Dark Studio Index</p>
+              <p className="project-index-eyebrow">深色工作台索引</p>
               <h1 className="project-index-title">BU 蓝昊 · pic_video_0515</h1>
               <p className="project-index-description">继续上次的工作流，或创建新项目进入深色工作室界面。</p>
             </div>
@@ -75,7 +75,7 @@ export default function ProjectListPage() {
 
             <div className="project-index-summary__details">
               <p>项目卡片会保留当前磁盘路径信息，右键可继续打开目录或从索引中移除。</p>
-              <p>当前页只调整视觉层级，不改动项目加载、打开、删除和弹窗行为。</p>
+              <p>点击项目即可继续编辑当前工作流。</p>
             </div>
           </div>
         </section>
@@ -117,11 +117,11 @@ export default function ProjectListPage() {
                   }}
                 >
                   <article className="proj-card" onClick={() => nav(`/editor/${encodeURIComponent(p.name)}`)}>
-                    <div className="proj-card__eyebrow">Project Entry</div>
+                    <div className="proj-card__eyebrow">项目入口</div>
                     <div className="name">{p.name}</div>
                     <div className="proj-card__hint">点击进入编辑器，右键查看更多操作</div>
                     <div className="proj-card__path-shell">
-                      <div className="proj-card__path-label">Path</div>
+                      <div className="proj-card__path-label">路径</div>
                       <div className="path">{p.path}</div>
                     </div>
                   </article>

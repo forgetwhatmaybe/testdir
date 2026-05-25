@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ReactFlow, {
   Background, Controls, MarkerType, MiniMap, ReactFlowProvider,
-  type Connection, type Edge, type Node, type ReactFlowInstance,
+  type Connection, type Edge, type HandleType, type Node, type ReactFlowInstance,
 } from 'reactflow';
 import { App as AntApp } from 'antd';
 import { useFlowStore } from '../../store/flowStore';
 import { useTaskStore } from '../../store/taskStore';
 import { nodeTypes, nodeMeta } from './nodes/index';
 import DataFlowEdge from './edges/DataFlowEdge';
-import { isValidConnection } from '../../utils/connectionRules';
+import { NODE_INPUT_KINDS, NODE_OUTPUT_KINDS, isValidConnection } from '../../utils/connectionRules';
 import { uniqueId, nextOutputName, nextTextOutputName } from '../../utils/nodeNaming';
 import { collectConnected } from '../../utils/upstreamWalker';
 import { useShortcuts } from '../../hooks/useShortcuts';
@@ -49,11 +49,129 @@ const QUICK_ADD_GROUPS: { label: string; types: string[] }[] = [
   { label: '输出', types: ['output'] },
 ];
 
+const NODE_DRAG_HANDLE = '.node-title';
+const TARGET_HANDLE_PREFERENCE = ['in', 'in_image', 'in_text', 'in_mask', 'in_first', 'in_last', 'in_refs', 'in_images', 'in_videos', 'in_audios'];
+const SOURCE_HANDLE_PREFERENCE = ['out', 'mask'];
+
+interface ConnectCandidate {
+  type: string;
+  label: string;
+  color: string;
+  group: string;
+  handleId: string;
+}
+
+interface ConnectMenuState {
+  x: number;
+  y: number;
+  flowX: number;
+  flowY: number;
+  startNodeId: string;
+  startHandleId: string;
+  startHandleType: HandleType;
+  candidates: ConnectCandidate[];
+}
+
+interface ConnectStartState {
+  nodeId: string;
+  handleId: string;
+  handleType: HandleType;
+}
+
 interface NodeStatusEntry {
   status?: string;
   progress?: number;
   message?: string;
   error?: string;
+}
+
+function pickPreferredHandle(handles: string[], preference: string[]): string {
+  return preference.find((handle) => handles.includes(handle)) ?? handles[0];
+}
+
+function getClientPoint(event: MouseEvent | TouchEvent): { x: number; y: number } | null {
+  if ('changedTouches' in event) {
+    const touch = event.changedTouches[0] ?? event.touches[0];
+    return touch ? { x: touch.clientX, y: touch.clientY } : null;
+  }
+  return { x: event.clientX, y: event.clientY };
+}
+
+function createPreviewNode(id: string, type: string): Node {
+  return {
+    id,
+    type,
+    position: { x: 0, y: 0 },
+    data: {},
+    dragHandle: NODE_DRAG_HANDLE,
+  };
+}
+
+function sortCandidates(candidates: ConnectCandidate[]): ConnectCandidate[] {
+  const groupOrder = new Map(QUICK_ADD_GROUPS.map((group, index) => [group.label, index]));
+  return [...candidates].sort((left, right) => {
+    const groupDiff = (groupOrder.get(left.group) ?? Number.MAX_SAFE_INTEGER) - (groupOrder.get(right.group) ?? Number.MAX_SAFE_INTEGER);
+    if (groupDiff !== 0) return groupDiff;
+    return left.label.localeCompare(right.label, 'zh-CN');
+  });
+}
+
+function getCompatibleNodeCandidates(startNode: Node, startHandleId: string, startHandleType: HandleType): ConnectCandidate[] {
+  const previewStart = { ...startNode, id: '__start__' } as Node;
+  const candidates: ConnectCandidate[] = [];
+
+  for (const [type, meta] of Object.entries(nodeMeta)) {
+    if (startHandleType === 'source') {
+      const targetHandles = Object.keys(NODE_INPUT_KINDS[type] ?? {}).filter((targetHandle) =>
+        isValidConnection(
+          {
+            source: previewStart.id,
+            sourceHandle: startHandleId,
+            target: '__candidate__',
+            targetHandle,
+          },
+          [previewStart, createPreviewNode('__candidate__', type)],
+          [],
+        ),
+      );
+
+      if (targetHandles.length) {
+        candidates.push({
+          type,
+          label: meta.label,
+          color: meta.color,
+          group: meta.group,
+          handleId: pickPreferredHandle(targetHandles, TARGET_HANDLE_PREFERENCE),
+        });
+      }
+      continue;
+    }
+
+    const sourceHandles = Object.keys(NODE_OUTPUT_KINDS[type] ?? {}).filter((sourceHandle) =>
+      isValidConnection(
+        {
+          source: '__candidate__',
+          sourceHandle,
+          target: previewStart.id,
+          targetHandle: startHandleId,
+        },
+        [createPreviewNode('__candidate__', type), previewStart],
+        [],
+      ),
+    );
+
+    if (sourceHandles.length) {
+      candidates.push({
+        type,
+        label: meta.label,
+        color: meta.color,
+        group: meta.group,
+        handleId: pickPreferredHandle(sourceHandles, SOURCE_HANDLE_PREFERENCE),
+      });
+    }
+  }
+
+  return sortCandidates(candidates);
 }
 
 // TapNow 拓扑布局间距常量
@@ -139,8 +257,12 @@ function InnerCanvas({ saveNow, pendingTemplate, onTemplatePlaced, registerLocat
   const { message } = AntApp.useApp();
   const project = useProjectStore((s) => s.current);
   const wrapper = useRef<HTMLDivElement>(null);
+  const connectStartRef = useRef<ConnectStartState | null>(null);
+  const didConnectRef = useRef(false);
+  const suppressPaneClickRef = useRef(false);
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
   const [paneMenu, setPaneMenu] = useState<{ x: number; y: number; flowX: number; flowY: number } | null>(null);
+  const [connectMenu, setConnectMenu] = useState<ConnectMenuState | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   const nodes = useFlowStore((s) => s.nodes);
@@ -181,12 +303,34 @@ function InnerCanvas({ saveNow, pendingTemplate, onTemplatePlaced, registerLocat
     if (dirty) setNodes(fixed);
   }, []);
 
+  useEffect(() => {
+    if (!nodes.length) return;
+    const missingDragHandle = nodes.some((node) => node.dragHandle !== NODE_DRAG_HANDLE);
+    if (!missingDragHandle) return;
+    setNodes(nodes.map((node) => (node.dragHandle === NODE_DRAG_HANDLE ? node : { ...node, dragHandle: NODE_DRAG_HANDLE })));
+  }, [nodes, setNodes]);
+
+  const createNode = useCallback((type: string, x: number, y: number, data: Record<string, unknown> = {}): Node => {
+    const id = uniqueId('n');
+    const nextData: Record<string, unknown> = { ...data };
+    if (type === 'output' && !nextData.name) nextData.name = nextOutputName(useFlowStore.getState().nodes);
+    if (type === 'text_display' && !nextData.name) nextData.name = nextTextOutputName(useFlowStore.getState().nodes);
+    return {
+      id,
+      type,
+      position: { x, y },
+      data: nextData,
+      dragHandle: NODE_DRAG_HANDLE,
+    };
+  }, []);
+
   const onConnect = useCallback((conn: Connection) => {
     const valid = isValidConnection(conn, useFlowStore.getState().nodes, useFlowStore.getState().edges);
     if (!valid) {
       message.warning('连线不合法（类型不符 / 输入口已占满）');
       return;
     }
+    didConnectRef.current = true;
     const newEdge: Edge = {
       ...(conn as Edge),
       id: `e_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
@@ -195,6 +339,49 @@ function InnerCanvas({ saveNow, pendingTemplate, onTemplatePlaced, registerLocat
     setEdges([...useFlowStore.getState().edges, newEdge]);
     pushHistory();
   }, [setEdges, pushHistory, message]);
+
+  const onConnectStart = useCallback((_event: React.MouseEvent | React.TouchEvent, params: { nodeId: string | null; handleId: string | null; handleType: HandleType | null }) => {
+    if (!params.nodeId || !params.handleId || !params.handleType) return;
+    connectStartRef.current = {
+      nodeId: params.nodeId,
+      handleId: params.handleId,
+      handleType: params.handleType,
+    };
+    didConnectRef.current = false;
+    setConnectMenu(null);
+    setPaneMenu(null);
+  }, []);
+
+  const onConnectEnd = useCallback((event: MouseEvent | TouchEvent) => {
+    const start = connectStartRef.current;
+    const connected = didConnectRef.current;
+    connectStartRef.current = null;
+    didConnectRef.current = false;
+
+    if (!start || connected || !rfInstance) return;
+
+    const point = getClientPoint(event);
+    if (!point) return;
+
+    const startNode = useFlowStore.getState().nodes.find((node) => node.id === start.nodeId);
+    if (!startNode) return;
+
+    const candidates = getCompatibleNodeCandidates(startNode, start.handleId, start.handleType);
+    if (!candidates.length) return;
+
+    const flowPoint = rfInstance.screenToFlowPosition(point);
+    suppressPaneClickRef.current = true;
+    setConnectMenu({
+      x: point.x,
+      y: point.y,
+      flowX: flowPoint.x,
+      flowY: flowPoint.y,
+      startNodeId: start.nodeId,
+      startHandleId: start.handleId,
+      startHandleType: start.handleType,
+      candidates,
+    });
+  }, [rfInstance]);
 
   const onDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -223,16 +410,11 @@ function InnerCanvas({ saveNow, pendingTemplate, onTemplatePlaced, registerLocat
       if (!isVideo && !isImage && !isAudio) continue;
       try {
         const r = await uploadFile(project, f);
-        const id = uniqueId('n');
         const t = isVideo ? 'video' : isAudio ? 'audio' : 'image';
         const data: any = isVideo ? { video_path: r.rel_path }
           : isAudio ? { audio_path: r.rel_path }
           : { image_path: r.rel_path };
-        const newNode: Node = {
-          id, type: t,
-          position: { x: pos.x + offset, y: pos.y + offset },
-          data,
-        };
+        const newNode = createNode(t, pos.x + offset, pos.y + offset, data);
         setNodes([...useFlowStore.getState().nodes, newNode]);
         offset += 24;
       } catch (err: any) {
@@ -240,17 +422,54 @@ function InnerCanvas({ saveNow, pendingTemplate, onTemplatePlaced, registerLocat
       }
     }
     pushHistory();
-  }, [rfInstance, project, setNodes, pushHistory, message]);
+  }, [rfInstance, project, setNodes, pushHistory, message, createNode]);
 
   const addNodeAt = useCallback((type: string, x: number, y: number) => {
-    const id = uniqueId('n');
-    const data: Record<string, unknown> = {};
-    if (type === 'output') data.name = nextOutputName(useFlowStore.getState().nodes);
-    if (type === 'text_display') data.name = nextTextOutputName(useFlowStore.getState().nodes);
-    const newNode: Node = { id, type, position: { x, y }, data };
+    const newNode = createNode(type, x, y);
     setNodes([...useFlowStore.getState().nodes, newNode]);
     pushHistory();
-  }, [setNodes, pushHistory]);
+    return newNode;
+  }, [setNodes, pushHistory, createNode]);
+
+  const onQuickConnect = useCallback((candidate: ConnectCandidate) => {
+    if (!connectMenu) return;
+
+    const nextX = connectMenu.startHandleType === 'source' ? connectMenu.flowX + 40 : connectMenu.flowX - 280;
+    const newNode = createNode(candidate.type, nextX, connectMenu.flowY);
+    const current = useFlowStore.getState();
+    const nextNodes = [...current.nodes, newNode];
+    const connection: Connection = connectMenu.startHandleType === 'source'
+      ? {
+          source: connectMenu.startNodeId,
+          sourceHandle: connectMenu.startHandleId,
+          target: newNode.id,
+          targetHandle: candidate.handleId,
+        }
+      : {
+          source: newNode.id,
+          sourceHandle: candidate.handleId,
+          target: connectMenu.startNodeId,
+          targetHandle: connectMenu.startHandleId,
+        };
+
+    if (!isValidConnection(connection, nextNodes, current.edges)) {
+      message.warning('该节点在当前位置不可自动连接');
+      setConnectMenu(null);
+      return;
+    }
+
+    const newEdge: Edge = {
+      ...(connection as Edge),
+      id: `e_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      type: 'default',
+    };
+
+    setNodes(nextNodes);
+    setEdges([...current.edges, newEdge]);
+    pushHistory();
+    suppressPaneClickRef.current = false;
+    setConnectMenu(null);
+  }, [connectMenu, createNode, setEdges, setNodes, pushHistory, message]);
 
   const onNodeClick = useCallback((e: React.MouseEvent, node: Node) => {
     if (e.ctrlKey || e.metaKey) {
@@ -261,7 +480,13 @@ function InnerCanvas({ saveNow, pendingTemplate, onTemplatePlaced, registerLocat
   }, [setNodes]);
 
   const onPaneClick = useCallback((e: React.MouseEvent) => {
+    if (suppressPaneClickRef.current) {
+      suppressPaneClickRef.current = false;
+      return;
+    }
+
     setPaneMenu(null);
+    setConnectMenu(null);
     if (!pendingTemplate || !rfInstance) return;
     const pos = rfInstance.screenToFlowPosition({ x: e.clientX, y: e.clientY });
     const tpl = pendingTemplate;
@@ -285,6 +510,7 @@ function InnerCanvas({ saveNow, pendingTemplate, onTemplatePlaced, registerLocat
         id: newId, type: n.type,
         position: { x: pos.x + ((n.position?.x ?? 0) - minX), y: pos.y + ((n.position?.y ?? 0) - minY) },
         data,
+        dragHandle: NODE_DRAG_HANDLE,
       };
     });
     const newEdges: Edge[] = (tpl.edges || []).map((eg) => ({
@@ -303,6 +529,8 @@ function InnerCanvas({ saveNow, pendingTemplate, onTemplatePlaced, registerLocat
   const onPaneContextMenu = useCallback((e: React.MouseEvent | MouseEvent) => {
     if (!rfInstance) return;
     e.preventDefault();
+    suppressPaneClickRef.current = false;
+    setConnectMenu(null);
     const pos = rfInstance.screenToFlowPosition({ x: e.clientX, y: e.clientY });
     setPaneMenu({ x: e.clientX, y: e.clientY, flowX: pos.x, flowY: pos.y });
   }, [rfInstance]);
@@ -355,6 +583,8 @@ function InnerCanvas({ saveNow, pendingTemplate, onTemplatePlaced, registerLocat
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onConnectStart={onConnectStart}
+        onConnectEnd={onConnectEnd}
         onInit={setRfInstance}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
@@ -373,7 +603,8 @@ function InnerCanvas({ saveNow, pendingTemplate, onTemplatePlaced, registerLocat
         zoomOnPinch
         panOnDrag={[1, 2]}
         proOptions={{ hideAttribution: true }}
-        noDragClassName="ant-select-dropdown, .ant-select-item, .ant-select-selection-item, .ant-input, .ant-input-number-input, .ant-slider, .ant-btn, .ant-modal-content, .ant-dropdown-menu"
+        noDragClassName="node-row"
+        noPanClassName="node-row"
         fitView
         minZoom={0.1}
         maxZoom={3}
@@ -384,30 +615,30 @@ function InnerCanvas({ saveNow, pendingTemplate, onTemplatePlaced, registerLocat
         }}
       >
         <Background 
-          color="#e2e8f0" 
+          color="rgba(148, 163, 184, 0.18)" 
           gap={24}
           size={1}
           style={{ 
-            background: '#f5f7fa',
+            background: 'radial-gradient(circle at top, rgba(95, 143, 203, 0.12), transparent 34%), #0a0f16',
           }}
         />
         <Controls
           style={{
-            background: '#ffffff',
-            border: '1px solid #e2e8f0',
+            background: 'rgba(17, 22, 31, 0.94)',
+            border: '1px solid rgba(126, 138, 162, 0.26)',
             borderRadius: '8px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.28)',
           }}
         />
         <MiniMap 
           pannable 
           zoomable 
-          maskColor="rgba(0,0,0,0.04)" 
+          maskColor="rgba(6,10,15,0.72)" 
           style={{ 
-            background: '#ffffff',
-            border: '1px solid #e2e8f0',
+            background: 'rgba(10, 15, 22, 0.96)',
+            border: '1px solid rgba(126, 138, 162, 0.26)',
             borderRadius: '8px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.28)',
           }}
         />
       </ReactFlow>
@@ -441,6 +672,40 @@ function InnerCanvas({ saveNow, pendingTemplate, onTemplatePlaced, registerLocat
               ))}
             </div>
           ))}
+        </div>
+      )}
+
+      {connectMenu && (
+        <div
+          onMouseLeave={() => {
+            suppressPaneClickRef.current = false;
+            setConnectMenu(null);
+          }}
+          style={{
+            position: 'fixed', left: connectMenu.x, top: connectMenu.y, zIndex: 220,
+            background: '#11161f', border: '1px solid rgba(126, 138, 162, 0.32)', borderRadius: 8, padding: 6,
+            boxShadow: '0 12px 32px rgba(0,0,0,0.4)', minWidth: 180,
+          }}
+        >
+          {QUICK_ADD_GROUPS.map((group) => {
+            const groupCandidates = connectMenu.candidates.filter((candidate) => candidate.group === group.label);
+            if (!groupCandidates.length) return null;
+            return (
+              <div key={group.label}>
+                <div style={{ fontSize: 11, color: '#7e8aa2', padding: '4px 8px' }}>{group.label}</div>
+                {groupCandidates.map((candidate) => (
+                  <div
+                    key={`${candidate.type}-${candidate.handleId}`}
+                    className="quick-add-item"
+                    onClick={() => onQuickConnect(candidate)}
+                  >
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: candidate.color, marginRight: 6, display: 'inline-block' }} />
+                    {candidate.label}
+                  </div>
+                ))}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
