@@ -548,7 +548,6 @@ function InnerCanvas({ saveNow, pendingTemplate, onTemplatePlaced, registerLocat
       style: {
         strokeWidth: activeStatus === 'executing' ? 2 : 1.5,
         stroke: markerColor,
-        transition: 'all 0.2s ease',
       },
       markerEnd: {
         type: MarkerType.ArrowClosed,
