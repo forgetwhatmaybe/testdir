@@ -1,6 +1,7 @@
 # Secrets
 .vocode/mcp.json
 .superpowers/
+.worktrees/
 
 # Python
 backend/.venv/
