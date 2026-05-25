@@ -606,7 +606,6 @@ function InnerCanvas({ saveNow, pendingTemplate, onTemplatePlaced, registerLocat
         fitView
         minZoom={0.1}
         maxZoom={3}
-        nodeExtent={[[-1000, -1000], [5000, 5000]]}
         defaultEdgeOptions={{
           type: 'default',
           style: { strokeWidth: 1.5, stroke: '#a0aec0' },

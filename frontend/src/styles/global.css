@@ -112,6 +112,18 @@ body {
   color: var(--color-text-primary);
 }
 
+.react-flow__node-output,
+.react-flow__node-output.selectable:hover,
+.react-flow__node-output.selectable.selected,
+.react-flow__node-output.selectable:focus,
+.react-flow__node-output.selectable:focus-visible {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
 /* ===== Ant Design Select 下拉弹出层必须浮于 ReactFlow 之上 ===== */
 .ant-select-dropdown {
   z-index: 10000 !important;
@@ -263,7 +275,7 @@ body {
 .react-flow__edge-path {
   stroke-width: 1.5;
   stroke: #a0aec0;
-  transition: stroke-width 0.15s ease, stroke 0.15s ease;
+  transition: none;
 }
 
 .react-flow__edge:hover .react-flow__edge-path {

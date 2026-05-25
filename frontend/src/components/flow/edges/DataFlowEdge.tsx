@@ -174,7 +174,6 @@ const DataFlowEdge: FC<EdgeProps> = ({
           strokeWidth: status === 'executing' ? 2.5 : 2,
           strokeDasharray: theme.dashArray,
           filter: theme.glow,
-          transition: 'all 0.5s ease',
           ...style,
         }}
         markerEnd={markerEnd}
