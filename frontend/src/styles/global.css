@@ -636,14 +636,14 @@ button.ant-btn-primary:hover {
   flex-direction: column;
 }
 
-.proj-list {
+.project-index-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 18px;
   padding: 0;
 }
 
-.proj-card {
+.project-index-card {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -661,7 +661,7 @@ button.ant-btn-primary:hover {
   transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
 }
 
-.proj-card::before {
+.project-index-card::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -670,19 +670,19 @@ button.ant-btn-primary:hover {
   pointer-events: none;
 }
 
-.proj-card > * {
+.project-index-card > * {
   position: relative;
   z-index: 1;
 }
 
-.proj-card:hover {
+.project-index-card:hover {
   transform: translateY(-4px);
   border-color: rgba(141, 184, 239, 0.7);
   box-shadow: var(--shadow-glow-blue), var(--shadow-lg);
 }
 
-.proj-card__eyebrow,
-.proj-card__path-label {
+.project-index-card__eyebrow,
+.project-index-card__path-label {
   color: var(--color-text-tertiary);
   font-size: 10px;
   font-weight: 700;
@@ -690,7 +690,7 @@ button.ant-btn-primary:hover {
   text-transform: uppercase;
 }
 
-.proj-card .name {
+.project-index-card__name {
   margin: 0;
   color: var(--color-text-primary);
   font-size: 20px;
@@ -698,19 +698,19 @@ button.ant-btn-primary:hover {
   font-weight: 700;
 }
 
-.proj-card__hint {
+.project-index-card__hint {
   color: var(--color-text-secondary);
   font-size: 12px;
   line-height: 1.6;
 }
 
-.proj-card__path-shell {
+.project-index-card__path-shell {
   margin-top: auto;
   padding: 14px 14px 12px;
   border-radius: 16px;
 }
 
-.proj-card .path {
+.project-index-card__path {
   margin-top: 8px;
   color: rgba(202, 212, 228, 0.72);
   font-size: 12px;
@@ -790,11 +790,11 @@ button.ant-btn-primary:hover {
     font-size: 28px;
   }
 
-  .proj-list {
+  .project-index-grid {
     grid-template-columns: 1fr;
   }
 
-  .proj-card {
+  .project-index-card {
     min-height: 0;
     padding: 20px;
   }

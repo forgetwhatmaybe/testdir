@@ -8,7 +8,7 @@ import { getGeneral } from '../api/settings';
 
 export default function ProjectListPage() {
   const nav = useNavigate();
-  const { message } = AntApp.useApp();
+  const { message, modal } = AntApp.useApp();
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const [disks, setDisks] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
@@ -32,11 +32,22 @@ export default function ProjectListPage() {
 
   useEffect(() => { load(); }, []);
 
+  const openCreateModal = () => {
+    const nextDisk = form.getFieldValue('disk') || disks[0];
+    form.setFieldsValue({ disk: nextDisk, name: '' });
+    setOpen(true);
+  };
+
+  const closeCreateModal = () => {
+    setOpen(false);
+    form.resetFields(['name']);
+  };
+
   const onCreate = async () => {
     const v = await form.validateFields();
     try {
       await createProject(v.disk, v.name.trim());
-      setOpen(false);
+      closeCreateModal();
       form.resetFields();
       load();
     } catch (e: any) {
@@ -47,6 +58,19 @@ export default function ProjectListPage() {
   const onOpenAIVIDEO = async () => {
     if (!disks.length) return;
     await openFolder(`${disks[0]}:/AIVIDEO`);
+  };
+
+  const onRemoveProject = (project: ProjectInfo) => {
+    modal.confirm({
+      title: '从列表移除？',
+      content: `项目: ${project.name}（不会删除磁盘文件）`,
+      okText: '确定',
+      cancelText: '取消',
+      onOk: async () => {
+        await deleteProject(project.name);
+        await load();
+      },
+    });
   };
 
   return (
@@ -61,7 +85,7 @@ export default function ProjectListPage() {
             </div>
 
             <div className="project-index-actions">
-              <Button icon={<PlusOutlined />} type="primary" onClick={() => setOpen(true)}>新建项目</Button>
+              <Button icon={<PlusOutlined />} type="primary" onClick={openCreateModal}>新建项目</Button>
               <Button icon={<FolderOpenOutlined />} onClick={onOpenAIVIDEO}>打开 AIVIDEO</Button>
               <Button icon={<SettingOutlined />} onClick={() => nav('/settings')}>API 设置</Button>
             </div>
@@ -89,7 +113,7 @@ export default function ProjectListPage() {
               </div>
             </div>
           ) : (
-            <div className="proj-list project-index-grid">
+            <div className="project-index-grid">
               {projects.map((p) => (
                 <Dropdown
                   key={p.path}
@@ -103,26 +127,17 @@ export default function ProjectListPage() {
                     onClick: async (i) => {
                       if (i.key === 'open') nav(`/editor/${encodeURIComponent(p.name)}`);
                       else if (i.key === 'folder') await openFolder(p.path);
-                      else if (i.key === 'del') {
-                        Modal.confirm({
-                          title: '从列表移除？',
-                          content: `项目: ${p.name}（不会删除磁盘文件）`,
-                          onOk: async () => {
-                            await deleteProject(p.name);
-                            load();
-                          },
-                        });
-                      }
+                      else if (i.key === 'del') onRemoveProject(p);
                     },
                   }}
                 >
-                  <article className="proj-card" onClick={() => nav(`/editor/${encodeURIComponent(p.name)}`)}>
-                    <div className="proj-card__eyebrow">项目入口</div>
-                    <div className="name">{p.name}</div>
-                    <div className="proj-card__hint">点击进入编辑器，右键查看更多操作</div>
-                    <div className="proj-card__path-shell">
-                      <div className="proj-card__path-label">路径</div>
-                      <div className="path">{p.path}</div>
+                  <article className="project-index-card" onClick={() => nav(`/editor/${encodeURIComponent(p.name)}`)}>
+                    <div className="project-index-card__eyebrow">项目入口</div>
+                    <div className="project-index-card__name">{p.name}</div>
+                    <div className="project-index-card__hint">点击进入编辑器，右键查看更多操作</div>
+                    <div className="project-index-card__path-shell">
+                      <div className="project-index-card__path-label">路径</div>
+                      <div className="project-index-card__path">{p.path}</div>
                     </div>
                   </article>
                 </Dropdown>
@@ -132,7 +147,7 @@ export default function ProjectListPage() {
         </section>
       </div>
 
-      <Modal title="新建项目" open={open} onOk={onCreate} onCancel={() => setOpen(false)} okText="创建" cancelText="取消" destroyOnClose>
+      <Modal title="新建项目" open={open} onOk={onCreate} onCancel={closeCreateModal} okText="创建" cancelText="取消" destroyOnHidden forceRender>
         <Form form={form} layout="vertical" preserve={false}>
           <Form.Item label="所在磁盘" name="disk" rules={[{ required: true }]}>
             <Select options={disks.map((d) => ({ value: d, label: `${d}:` }))} />

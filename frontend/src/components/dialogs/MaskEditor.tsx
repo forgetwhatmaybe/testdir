@@ -146,7 +146,7 @@ export default function MaskEditor({ open, imageUrl, existingMaskUrl, onCancel, 
 
   return (
     <Modal title="绘制蒙版（左键涂、右键擦）" open={open} onCancel={onCancel} onOk={submit}
-      okText="确认" cancelText="取消" width={view.w + 80} destroyOnClose>
+      okText="确认" cancelText="取消" width={view.w + 80} destroyOnHidden>
       <Space style={{ marginBottom: 8 }} wrap>
         <span>笔刷</span>
         <Slider min={5} max={150} value={brush} onChange={(v) => setBrush(v as number)} style={{ width: 200 }} />

@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import json
-import shutil
 import string
 from pathlib import Path
 
@@ -22,15 +21,35 @@ def project_root(disk: str, name: str) -> Path:
     return Path(f"{disk.upper()}:/") / ROOT_FOLDER_NAME / name
 
 
+def _load_hidden_projects() -> set[str]:
+    if not PROJECTS_INDEX_PATH.exists():
+        return set()
+    try:
+        hidden = json.loads(PROJECTS_INDEX_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return set()
+    if not isinstance(hidden, list):
+        return set()
+    return {str(name) for name in hidden}
+
+
+def _save_hidden_projects(hidden: set[str]) -> None:
+    PROJECTS_INDEX_PATH.write_text(
+        json.dumps(sorted(hidden), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+
 def list_projects() -> list[dict]:
     projects: list[dict] = []
     seen: set[str] = set()
+    hidden = _load_hidden_projects()
     for letter in list_disks():
         base = Path(f"{letter}:/") / ROOT_FOLDER_NAME
         if not base.exists():
             continue
         for child in base.iterdir():
-            if child.is_dir() and child.name not in seen:
+            if child.is_dir() and child.name not in seen and child.name not in hidden:
                 projects.append({
                     "name": child.name,
                     "path": str(child),
@@ -54,6 +73,10 @@ def create_project(disk: str, name: str) -> dict:
             "nodes": [],
             "edges": []
         }, ensure_ascii=False, indent=2), encoding="utf-8")
+    hidden = _load_hidden_projects()
+    if name in hidden:
+        hidden.remove(name)
+        _save_hidden_projects(hidden)
     return {"name": name, "path": str(root), "disk": disk}
 
 
@@ -66,14 +89,9 @@ def find_project(name: str) -> Path:
 
 
 def remove_from_index(name: str) -> None:
-    index = []
-    if PROJECTS_INDEX_PATH.exists():
-        try:
-            index = json.loads(PROJECTS_INDEX_PATH.read_text(encoding="utf-8"))
-        except Exception:
-            index = []
-    index = [n for n in index if n != name]
-    PROJECTS_INDEX_PATH.write_text(json.dumps(index, ensure_ascii=False), encoding="utf-8")
+    hidden = _load_hidden_projects()
+    hidden.add(name)
+    _save_hidden_projects(hidden)
 
 
 def load_workflow(name: str) -> dict:
