@@ -13,16 +13,11 @@
   --surface-panel-strong: #171d28;
   --surface-panel-muted: #1d2531;
   --surface-node: #141b24;
-  --surface-node-header: rgba(255, 255, 255, 0.05);
   --surface-overlay: rgba(11, 15, 22, 0.90);
   --color-accent-primary-rgb: 95, 143, 203;
   --color-success-rgb: 77, 166, 125;
   --color-warning-rgb: 201, 152, 92;
   --color-error-rgb: 201, 106, 120;
-  --color-accent-audio-rgb: 110, 167, 188;
-  --color-accent-violet-rgb: 140, 121, 186;
-  --color-accent-rose-rgb: 190, 115, 150;
-  --color-accent-orange-rgb: 191, 135, 90;
   --color-bg-primary: var(--surface-page);
   --color-bg-secondary: var(--surface-panel);
   --color-bg-tertiary: var(--surface-panel-strong);
@@ -37,15 +32,10 @@
   --color-text-tertiary: #7e8aa2;
   --color-text-disabled: #596577;
   --color-accent-primary: #5f8fcb;
-  --color-accent-primary-strong: #77a7e1;
-  --color-accent-violet: #8c79ba;
-  --color-accent-audio: #6ea7bc;
-  --color-accent-rose: #be7396;
-  --color-accent-orange: #bf875a;
   --color-neon-blue: var(--color-accent-primary);
   --color-neon-green: #4da67d;
-  --color-neon-purple: var(--color-accent-violet);
-  --color-neon-orange: var(--color-accent-orange);
+  --color-neon-purple: #8c79ba;
+  --color-neon-orange: #bf875a;
   --color-neon-red: #c96a78;
   --color-neon-yellow: #c9985c;
   --color-success: var(--color-neon-green);
@@ -60,7 +50,7 @@
   --shadow-xl: 0 32px 72px rgba(0, 0, 0, 0.40);
   --shadow-glow-blue: 0 0 0 1px rgba(var(--color-accent-primary-rgb), 0.22), 0 18px 40px rgba(18, 32, 56, 0.34);
   --shadow-glow-green: 0 0 0 1px rgba(var(--color-success-rgb), 0.22), 0 18px 36px rgba(18, 54, 40, 0.24);
-  --shadow-glow-purple: 0 0 0 1px rgba(var(--color-accent-violet-rgb), 0.22), 0 18px 36px rgba(40, 31, 60, 0.22);
+  --shadow-glow-purple: 0 0 0 1px rgba(140, 121, 186, 0.22), 0 18px 36px rgba(40, 31, 60, 0.22);
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
@@ -135,7 +125,7 @@ body {
   z-index: 10000 !important;
 }
 
-/* ===== React Flow 共享基础壳层 ===== */
+/* ===== Handle 端口 —— TapNow 极简圆点 ===== */
 .react-flow__handle {
   width: 9px !important;
   height: 9px !important;
@@ -145,6 +135,42 @@ body {
   transition: background 0.15s ease, box-shadow 0.15s ease;
 }
 
+.react-flow__handle:hover {
+  background: var(--color-neon-blue) !important;
+  box-shadow: 0 0 0 4px rgba(88,166,255,0.25);
+}
+
+.react-flow__handle-connecting {
+  border-color: var(--color-neon-green) !important;
+  background: var(--color-neon-green) !important;
+}
+
+.react-flow__handle-valid {
+  border-color: var(--color-neon-green) !important;
+  background: var(--color-neon-green) !important;
+}
+
+/* 各类型 handle 颜色 */
+.handle-image { background: var(--color-neon-green) !important; }
+.handle-image:hover { box-shadow: 0 0 0 4px rgba(63,185,80,0.3) !important; }
+.handle-video { background: var(--color-neon-blue) !important; }
+.handle-video:hover { box-shadow: 0 0 0 4px rgba(88,166,255,0.3) !important; }
+.handle-audio { background: #06b6d4 !important; }
+.handle-audio:hover { box-shadow: 0 0 0 4px rgba(6,182,212,0.3) !important; }
+.handle-text  { background: var(--color-text-tertiary) !important; }
+.handle-refs  { background: var(--color-neon-yellow) !important; }
+.handle-mask  { background: var(--color-neon-purple) !important; }
+.handle-kling { background: var(--color-neon-orange) !important; }
+.handle-veo3  { background: #ec4899 !important; }
+.handle-storyboard { background: #7c3aed !important; }
+.handle-jimeng { background: #ec4899 !important; }
+.handle-seedance2 { background: var(--color-neon-purple) !important; }
+.handle-gemini { background: var(--color-neon-green) !important; }
+.handle-image_edit { background: #ec4899 !important; }
+.handle-text_vision { background: var(--color-text-tertiary) !important; }
+.handle-text_display { background: var(--color-text-tertiary) !important; }
+
+/* ===== 节点壳 — 深色玻璃卡片 ===== */
 .node-shell {
   background: linear-gradient(135deg, rgba(22,27,34,0.98), rgba(13,17,23,0.96));
   border: 1px solid var(--color-border-default);
@@ -158,37 +184,161 @@ body {
   backdrop-filter: blur(12px);
 }
 
+/* 标题栏 — 深色科技风 */
+.node-title {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  padding: 10px 14px;
+  gap: 8px;
+  color: var(--color-text-primary);
+  position: relative;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: rgba(48,54,61,0.4);
+  border-bottom: 1px solid var(--color-border-default);
+  font-size: var(--font-sm);
+  letter-spacing: 0.02em;
+}
+
+.node-title-bar-image   { border-left: 3px solid var(--color-neon-green); }
+.node-title-bar-video   { border-left: 3px solid var(--color-neon-blue); }
+.node-title-bar-audio   { border-left: 3px solid #06b6d4; }
+.node-title-bar-text    { border-left: 3px solid var(--color-text-tertiary); }
+.node-title-bar-output  { border-left: 3px solid var(--color-neon-purple); }
+.node-title-bar-kling   { border-left: 3px solid var(--color-neon-orange); }
+.node-title-bar-jimeng  { border-left: 3px solid #ec4899; }
+.node-title-bar-gemini  { border-left: 3px solid var(--color-neon-green); }
+.node-title-bar-veo3    { border-left: 3px solid #ec4899; }
+.node-title-bar-seedance { border-left: 3px solid var(--color-neon-purple); }
+.node-title-bar-storyboard { border-left: 3px solid #7c3aed; }
+.node-title-bar-edit    { border-left: 3px solid #ec4899; }
+
+.node-title .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* 节点内容区 padding */
+.node-shell > :not(.node-title) {
+  padding: 10px 14px 14px 14px;
+}
+
+/* 选中态：发光边框 */
 .node-shell.selected {
   border-color: var(--color-neon-blue);
   box-shadow: var(--shadow-glow-blue), var(--shadow-md);
 }
 
-.node-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  color: var(--color-text-primary);
-  font-size: var(--font-sm);
-  font-weight: 600;
-  position: relative;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  background: rgba(48,54,61,0.4);
-  border-bottom: 1px solid var(--color-border-default);
-  letter-spacing: 0.02em;
+.node-shell.running {
+  border-color: var(--color-neon-green);
+  animation: borderFlow 2s linear infinite;
 }
 
-.node-title .dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
+.node-shell.failed {
+  border-color: var(--color-neon-red);
+  animation: errorShake 0.5s ease-in-out 1;
 }
 
-.node-shell > :not(.node-title) {
-  padding: 10px 14px 14px 14px;
+.node-shell.success-node {
+  border-color: var(--color-neon-green);
 }
 
+/* 拖拽时其他节点淡出 */
+.flow-canvas.dragging .react-flow__node:not(.dragging) {
+  opacity: 0.4;
+  transition: opacity 0.2s ease;
+}
+
+/* ===== 运行时边框流动动画 ===== */
+@keyframes borderFlow {
+  0% { border-color: #22c55e; box-shadow: 0 0 0 1px rgba(34,197,94,0.18); }
+  25% { border-color: #06b6d4; box-shadow: 0 0 0 1px rgba(6,182,212,0.18); }
+  50% { border-color: #3b82f6; box-shadow: 0 0 0 1px rgba(59,130,246,0.18); }
+  75% { border-color: #8b5cf6; box-shadow: 0 0 0 1px rgba(139,92,246,0.18); }
+  100% { border-color: #22c55e; box-shadow: 0 0 0 1px rgba(34,197,94,0.18); }
+}
+
+/* 连线样式 */
+.react-flow__edge-path {
+  stroke-width: 1.5;
+  stroke: #a0aec0;
+  transition: stroke-width 0.15s ease, stroke 0.15s ease;
+}
+
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke-width: 2;
+  stroke: #3b82f6;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke-width: 2.5;
+  stroke: #3b82f6;
+}
+
+/* 迷你地图 */
+.react-flow__minimap {
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+@keyframes errorShake {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(-4px); }
+  75%      { transform: translateX(4px); }
+}
+
+/* 端口类型图标 (通过 Handle 的 className 叠加) */
+.handle-icon-img::after  { content: '🖼'; font-size:7px; position:absolute; top:50%;left:50%;transform:translate(-50%,-50%); }
+.handle-icon-vid::after  { content: '🎬'; font-size:7px; position:absolute; top:50%;left:50%;transform:translate(-50%,-50%); }
+.handle-icon-aud::after  { content: '🎵'; font-size:7px; position:absolute; top:50%;left:50%;transform:translate(-50%,-50%); }
+.handle-icon-txt::after  { content: '📝'; font-size:7px; position:absolute; top:50%;left:50%;transform:translate(-50%,-50%); }
+.handle-icon-ref::after  { content: '🔗'; font-size:7px; position:absolute; top:50%;left:50%;transform:translate(-50%,-50%); }
+.handle-icon-msk::after  { content: '🎭'; font-size:7px; position:absolute; top:50%;left:50%;transform:translate(-50%,-50%); }
+.handle-icon-sboard::after{ content: '📋'; font-size:7px; position:absolute; top:50%;left:50%;transform:translate(-50%,-50%); }
+.node-thumb {
+  width: 100%;
+  max-height: 180px;
+  border-radius: 6px;
+  background: rgba(48,54,61,0.5);
+  margin: 8px 0;
+  display: block;
+  object-fit: contain;
+  border: 1px solid var(--color-border-default);
+  transition: border-color 0.15s ease;
+}
+
+.node-thumb:hover {
+  border-color: var(--color-border-hover);
+}
+
+.node-row {
+  display: flex; 
+  align-items: center; 
+  gap: 8px; 
+  margin: 4px 0;
+  padding: 5px 8px;
+  background: rgba(48,54,61,0.35);
+  border-radius: 6px;
+  border: 1px solid rgba(48,54,61,0.6);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.node-row:hover {
+  border-color: var(--color-border-hover);
+  background: rgba(88,166,255,0.06);
+}
+
+.node-label {
+  font-size: var(--font-sm); 
+  color: var(--color-text-tertiary);
+  font-weight: 500;
+  min-width: 44px;
+}
+
+/* 节点进度徽章 */
 .node-progress-badge {
   background: rgba(63,185,80,0.15);
   color: var(--color-neon-green);
@@ -218,8 +368,6 @@ body {
   gap: 12px;
   background: linear-gradient(180deg, rgba(23, 29, 40, 0.96), rgba(17, 22, 31, 0.92));
   border-bottom: 1px solid var(--color-border-default);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
-  backdrop-filter: blur(18px);
   z-index: 10;
 }
 
@@ -229,7 +377,6 @@ body {
   overflow: auto; 
   border-right: 1px solid var(--color-border-default);
   background: linear-gradient(180deg, rgba(17, 22, 31, 0.95), rgba(13, 17, 26, 0.96));
-  backdrop-filter: blur(16px);
 }
 
 .editor-center {
@@ -246,7 +393,6 @@ body {
   border-left: 1px solid var(--color-border-default);
   padding: 12px;
   background: linear-gradient(180deg, rgba(17, 22, 31, 0.95), rgba(13, 17, 26, 0.96));
-  backdrop-filter: blur(16px);
 }
 
 .editor-left,
@@ -260,6 +406,38 @@ body {
 .ant-card {
   border: 1px solid var(--color-border-default);
   box-shadow: var(--shadow-md);
+}
+
+.ant-btn {
+  border-radius: var(--radius-md) !important;
+  transition: all var(--transition-fast) !important;
+}
+
+.ant-btn:not(.ant-btn-primary):not(.ant-btn-dangerous):not(.ant-btn-link):not(.ant-btn-text) {
+  background: linear-gradient(180deg, rgba(25, 31, 43, 0.92), rgba(17, 22, 31, 0.94)) !important;
+  border-color: var(--color-border-default) !important;
+  color: var(--color-text-secondary) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.ant-btn:not(.ant-btn-primary):not(.ant-btn-dangerous):not(.ant-btn-link):not(.ant-btn-text):hover {
+  background: linear-gradient(180deg, rgba(32, 40, 55, 0.98), rgba(18, 24, 35, 0.98)) !important;
+  border-color: var(--color-border-hover) !important;
+  color: var(--color-text-primary) !important;
+}
+
+button.ant-btn-primary {
+  background: linear-gradient(180deg, #6d9bd2, #557fb8) !important;
+  border: 1px solid rgba(var(--color-accent-primary-rgb), 0.35) !important;
+  border-radius: 10px !important;
+  color: #f7faff !important;
+  font-weight: 600 !important;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+button.ant-btn-primary:hover {
+  background: linear-gradient(180deg, #7aa9e0, #608cc7) !important;
+  box-shadow: 0 8px 20px rgba(var(--color-accent-primary-rgb), 0.28);
 }
 
 /* ===== 横幅 ===== */
@@ -327,41 +505,90 @@ body {
   padding: 3px 0;
 }
 
+.node-token {
+  font-size: 10px;
+  color: #94a3b8;
+  text-align: right;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.node-warn {
+  font-size: 11px;
+  color: #f59e0b;
+  margin: 4px 0;
+  font-weight: 500;
+}
+
+.node-cfg-display {
+  font-size: 11px;
+  color: var(--color-neon-blue);
+  margin-left: 6px;
+}
+
+/* Output 缩略图 */
+.output-thumb {
+  width: 180px;
+  height: 100px;
+  background: #f1f5f9;
+  border-radius: 8px;
+  display: block;
+  object-fit: cover;
+  margin-top: 6px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.output-thumb:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-color: #cbd5e1;
+}
+
+/* 拖拽中的 ghost 节点轮廓 */
+.template-ghost {
+  pointer-events: none;
+  position: fixed;
+  border: 2px dashed var(--color-neon-blue);
+  background: rgba(88,166,255,0.05);
+  border-radius: 12px;
+  z-index: 1000;
+  box-shadow: 0 4px 16px rgba(88,166,255,0.1);
+}
+
+.quick-add-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  border-radius: 6px;
+  margin: 2px 0;
+  transition: all 0.15s ease;
+  border-left: 3px solid transparent;
+}
+
+.quick-add-item:hover {
+  background: rgba(88,166,255,0.08);
+  border-left-color: var(--color-neon-blue);
+}
+
 /* 画布缩放 — 严禁 transition:transform */
 .react-flow__viewport {
   /* ReactFlow JS 引擎直接管理 transform */
 }
 
-.ant-btn {
-  border-radius: var(--radius-md) !important;
-  transition: all var(--transition-fast) !important;
-}
-
-.ant-btn:not(.ant-btn-primary):not(.ant-btn-dangerous):not(.ant-btn-link):not(.ant-btn-text) {
-  background: linear-gradient(180deg, rgba(25, 31, 43, 0.92), rgba(17, 22, 31, 0.94)) !important;
-  border-color: var(--color-border-default) !important;
-  color: var(--color-text-secondary) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
-}
-
-.ant-btn:not(.ant-btn-primary):not(.ant-btn-dangerous):not(.ant-btn-link):not(.ant-btn-text):hover {
-  background: linear-gradient(180deg, rgba(32, 40, 55, 0.98), rgba(18, 24, 35, 0.98)) !important;
-  border-color: var(--color-border-hover) !important;
-  color: var(--color-text-primary) !important;
-}
-
 /* Ant Design Primary 按钮 */
 button.ant-btn-primary {
-  background: linear-gradient(180deg, #6d9bd2, #557fb8) !important;
-  border: 1px solid rgba(var(--color-accent-primary-rgb), 0.35) !important;
-  border-radius: 10px !important;
-  color: #f7faff !important;
+  background: var(--color-neon-green) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  color: #0d1117 !important;
   font-weight: 600 !important;
   transition: background 0.15s ease, box-shadow 0.15s ease;
 }
 button.ant-btn-primary:hover {
-  background: linear-gradient(180deg, #7aa9e0, #608cc7) !important;
-  box-shadow: 0 8px 20px rgba(var(--color-accent-primary-rgb), 0.28);
+  background: #2ea44f !important;
+  box-shadow: 0 2px 8px rgba(63,185,80,0.35);
 }
 
 /* ===== 节点入场动画 ===== */
@@ -371,6 +598,51 @@ button.ant-btn-primary:hover {
 .ant-progress-bg {
   background: var(--color-neon-blue) !important;
 }
+
+/* ===== Handle 悬浮脉冲发光效果 ===== */
+.react-flow__handle {
+  width: 9px !important;
+  height: 9px !important;
+  border: 2px solid var(--color-bg-secondary) !important;
+  background: var(--color-border-default) !important;
+  border-radius: 50%;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.react-flow__handle:hover {
+  background: var(--color-neon-blue) !important;
+  box-shadow: 0 0 0 4px rgba(88,166,255,0.25);
+}
+
+.react-flow__handle-connecting {
+  border-color: var(--color-neon-green) !important;
+  background: var(--color-neon-green) !important;
+}
+
+.react-flow__handle-valid {
+  border-color: var(--color-neon-green) !important;
+  background: var(--color-neon-green) !important;
+}
+
+/* 各类型 handle 颜色 */
+.handle-image { background: var(--color-neon-green) !important; }
+.handle-image:hover { box-shadow: 0 0 0 4px rgba(63,185,80,0.3) !important; }
+.handle-video { background: var(--color-neon-blue) !important; }
+.handle-video:hover { box-shadow: 0 0 0 4px rgba(88,166,255,0.3) !important; }
+.handle-audio { background: #06b6d4 !important; }
+.handle-audio:hover { box-shadow: 0 0 0 4px rgba(6,182,212,0.3) !important; }
+.handle-text  { background: var(--color-text-tertiary) !important; }
+.handle-refs  { background: var(--color-neon-yellow) !important; }
+.handle-mask  { background: var(--color-neon-purple) !important; }
+.handle-kling { background: var(--color-neon-orange) !important; }
+.handle-veo3  { background: #ec4899 !important; }
+.handle-storyboard { background: #7c3aed !important; }
+.handle-jimeng { background: #ec4899 !important; }
+.handle-seedance2 { background: var(--color-neon-purple) !important; }
+.handle-gemini { background: var(--color-neon-green) !important; }
+.handle-image_edit { background: #ec4899 !important; }
+.handle-text_vision { background: var(--color-text-tertiary) !important; }
+.handle-text_display { background: var(--color-text-tertiary) !important; }
 
 /* ===== 音频频谱动画边框 ===== */
 @keyframes audioBorderShine {
@@ -418,6 +690,13 @@ button.ant-btn-primary:hover {
   overflow: hidden;
 }
 
+/* ===== 全局过渡变量 ===== */
+:root {
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition-slow: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
 /* 入口动画 keyframes（供 ant-select-dropdown / ant-modal-content 引用） */
 @keyframes nodeEnter {
   0% { opacity: 0; }
@@ -449,13 +728,27 @@ button.ant-btn-primary:hover {
   animation: nodeEnter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+/* ===== 节点拖拽反馈 ===== */
+.react-flow__node.dragging .node-shell {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1), 0 0 0 2px rgba(59,130,246,0.2) !important;
+  transition: box-shadow 0.15s ease !important;
+}
+
+/* 连线拖拽 */
+.react-flow__connection-line {
+  stroke: #3b82f6 !important;
+  stroke-width: 2px !important;
+  stroke-dasharray: 6 3;
+  animation: connectionDash 0.4s linear infinite;
+}
+
 /* ===== 面板通用过渡增强 ===== */
 .ant-collapse > .ant-collapse-item > .ant-collapse-header {
   transition: background 0.3s ease, border-color 0.3s ease !important;
 }
 
 .ant-collapse > .ant-collapse-item > .ant-collapse-header:hover {
-  background: rgba(var(--color-accent-primary-rgb), 0.08) !important;
+  background: rgba(79, 195, 247, 0.06) !important;
 }
 
 .ant-collapse-content {
@@ -465,13 +758,13 @@ button.ant-btn-primary:hover {
 /* ===== 输入框聚焦光效 ===== */
 .ant-input:focus,
 .ant-input-focused {
-  border-color: var(--color-border-focus) !important;
-  box-shadow: 0 0 0 2px rgba(var(--color-accent-primary-rgb), 0.2), 0 0 8px rgba(var(--color-accent-primary-rgb), 0.15) !important;
+  border-color: #4fc3f7 !important;
+  box-shadow: 0 0 0 2px rgba(79, 195, 247, 0.2), 0 0 8px rgba(79, 195, 247, 0.15) !important;
 }
 
 .ant-input-number-focused {
-  border-color: var(--color-border-focus) !important;
-  box-shadow: 0 0 0 2px rgba(var(--color-accent-primary-rgb), 0.2), 0 0 8px rgba(var(--color-accent-primary-rgb), 0.15) !important;
+  border-color: #4fc3f7 !important;
+  box-shadow: 0 0 0 2px rgba(79, 195, 247, 0.2), 0 0 8px rgba(79, 195, 247, 0.15) !important;
 }
 
 /* ===== 全局渐变边框点缀 ===== */
@@ -487,6 +780,232 @@ button.ant-btn-primary:hover {
 @keyframes gradientShift {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
+}
+
+/* ===== 第3轮：节点状态指示灯 + 数据流动画 + 全局脉冲 ===== */
+
+@keyframes statusIdle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes statusQueued {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes statusExecuting {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.5);
+    transform: scale(1);
+  }
+  50% { 
+    box-shadow: 0 0 0 6px rgba(33, 150, 243, 0);
+    transform: scale(1.2);
+  }
+}
+
+@keyframes statusSuccess {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.5);
+    transform: scale(1);
+  }
+  50% { 
+    box-shadow: 0 0 0 6px rgba(76, 175, 80, 0);
+    transform: scale(1.1);
+  }
+}
+
+@keyframes statusError {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.5);
+    transform: scale(1);
+  }
+  50% { 
+    box-shadow: 0 0 0 6px rgba(244, 67, 54, 0);
+    transform: scale(1.1);
+  }
+}
+
+@keyframes statusCancelled {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes borderIdle {
+  0%, 100% { border-color: #e2e8f0; }
+  50% { border-color: #cbd5e1; }
+}
+
+@keyframes borderExecuting {
+  0%, 100% { 
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 0 rgba(59,130,246,0.2);
+  }
+  50% { 
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 6px rgba(59,130,246,0);
+  }
+}
+
+@keyframes borderSuccess {
+  0%, 100% { 
+    border-color: #22c55e;
+    box-shadow: 0 0 0 0 rgba(34,197,94,0.2);
+  }
+  50% { 
+    border-color: #22c55e;
+    box-shadow: 0 0 0 6px rgba(34,197,94,0);
+  }
+}
+
+@keyframes borderError {
+  0%, 100% { 
+    border-color: #ef4444;
+    box-shadow: 0 0 0 0 rgba(239,68,68,0.2);
+  }
+  50% { 
+    border-color: #ef4444;
+    box-shadow: 0 0 0 6px rgba(239,68,68,0);
+  }
+}
+
+@keyframes borderCancelled {
+  0%, 100% { border-color: #f59e0b; }
+  50% { border-color: #d97706; }
+}
+
+@keyframes progressPulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+@keyframes flowParticle {
+  0% { opacity: 0; transform: translate(0%, 0%); }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { opacity: 0; transform: translate(100%, 0%); }
+}
+
+@keyframes globalNeonPulse {
+  0%, 100% { 
+    opacity: 0.3;
+    filter: drop-shadow(0 0 2px rgba(59,130,246,0.2));
+  }
+  50% { 
+    opacity: 0.7;
+    filter: drop-shadow(0 0 8px rgba(59,130,246,0.4));
+  }
+}
+
+.node-shell.status-idle {
+  animation: borderIdle 2s ease-in-out infinite;
+}
+.node-shell.status-queued {
+  animation: borderIdle 1.5s ease-in-out infinite;
+}
+.node-shell.status-executing {
+  animation: borderExecuting 1.4s ease-in-out infinite;
+}
+.node-shell.status-success {
+  animation: borderSuccess 1.2s ease-in-out infinite;
+}
+.node-shell.status-error {
+  animation: borderError 0.8s ease-in-out infinite;
+}
+.node-shell.status-cancelled {
+  animation: borderCancelled 1.5s ease-in-out infinite;
+}
+
+.node-status-indicator {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  z-index: 5;
+}
+.node-status-indicator.idle { background: #9e9e9e; animation: statusIdle 2s ease-in-out infinite; }
+.node-status-indicator.queued { background: #ff9800; animation: statusQueued 1.5s ease-in-out infinite; }
+.node-status-indicator.executing { background: #2196f3; animation: statusExecuting 1.4s ease-in-out infinite; }
+.node-status-indicator.success { background: #4caf50; animation: statusSuccess 1.2s ease-in-out infinite; }
+.node-status-indicator.error { background: #f44336; animation: statusError 0.8s ease-in-out infinite; }
+.node-status-indicator.cancelled { background: #ff9800; animation: statusCancelled 1.5s ease-in-out infinite; }
+
+.node-progress-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 24px;
+  height: 16px;
+  padding: 0 4px;
+  background: linear-gradient(135deg, #2196f3, #03a9f4);
+  color: white;
+  font-size: 9px;
+  font-weight: 600;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 6;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  animation: progressPulse 1s ease-in-out infinite;
+}
+
+.data-flow-edge.executing .react-flow__edge-path {
+  stroke: url(#edgeGradientNeon);
+  filter: drop-shadow(0 0 6px rgba(33, 150, 243, 0.8));
+  stroke-dasharray: 10 5;
+  animation: connectionDash 0.3s linear infinite;
+}
+.data-flow-edge.success .react-flow__edge-path {
+  stroke: url(#edgeGradientSuccess);
+  filter: drop-shadow(0 0 6px rgba(76, 175, 80, 0.8));
+}
+.data-flow-edge.error .react-flow__edge-path {
+  stroke: url(#edgeGradientError);
+  filter: drop-shadow(0 0 6px rgba(244, 67, 54, 0.8));
+  stroke-dasharray: 4 8;
+  animation: connectionDash 0.15s linear infinite;
+}
+
+.global-neon-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(circle at 50% 50%, rgba(33, 150, 243, 0.1) 0%, transparent 50%);
+  animation: globalNeonPulse 2s ease-in-out infinite;
+}
+
+/* 全局执行脉冲（FlowCanvas 使用） */
+.flow-global-pulse {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(circle at 50% 50%, rgba(33, 150, 243, 0.08) 0%, transparent 60%);
+  animation: globalNeonPulse 2s ease-in-out infinite;
+}
+
+/* 边虚线动画 */
+@keyframes connectionDash {
+  to { stroke-dashoffset: -24; }
+}
+
+.anim-dash-fast {
+  animation: connectionDash 0.25s linear infinite;
+}
+
+.anim-dash-flash {
+  animation: connectionDash 0.12s linear infinite;
 }
 
 /* ========== v4: 赛博网格背景 (CyberGrid) ========== */
@@ -1189,6 +1708,15 @@ code {
   /* 节点组件移动端全宽 */
   .node-shell { min-width: 160px; max-width: 90vw; }
   .node-title { font-size: var(--font-sm); padding: 6px 8px; }
+  .node-row { font-size: var(--font-xs); gap: 4px; padding: 3px 4px; }
+  .node-thumb { max-height: 100px; }
+  /* 迷你地图缩小 */
+  .react-flow__minimap {
+    width: 80px !important;
+    height: 60px !important;
+    right: 8px !important;
+    bottom: 8px !important;
+  }
   /* 批量进度面板全屏 */
   .batch-progress-panel {
     width: 100vw;
@@ -1281,9 +1809,9 @@ select:focus-visible,
 /* ReactFlow 节点聚焦 */
 .react-flow__node:focus-visible .node-shell,
 .react-flow__node:focus-within .node-shell {
-  outline: 2px solid var(--color-border-focus);
+  outline: 2px solid var(--color-accent, #00bcd4);
   outline-offset: 2px;
-  box-shadow: 0 0 0 1px rgba(var(--color-accent-primary-rgb), 0.14), var(--shadow-md);
+  box-shadow: 0 0 16px rgba(0, 188, 212, 0.5);
 }
 
 /* 对比度优化：暗色主题文字层级 */
