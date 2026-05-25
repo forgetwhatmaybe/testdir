@@ -50,52 +50,87 @@ export default function ProjectListPage() {
   };
 
   return (
-    <div style={{ height: '100vh', overflow: 'auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #2a2a2a', gap: 8 }}>
-        <strong style={{ flex: 1, color: '#fff' }}>BU 蓝昊 · pic_video_0515</strong>
-        <Button icon={<PlusOutlined />} type="primary" onClick={() => setOpen(true)}>新建项目</Button>
-        <Button icon={<FolderOpenOutlined />} onClick={onOpenAIVIDEO}>打开 AIVIDEO</Button>
-        <Button icon={<SettingOutlined />} onClick={() => nav('/settings')}>API 设置</Button>
-      </div>
+    <main className="project-index-page">
+      <div className="project-index-shell">
+        <section className="project-index-hero">
+          <header className="project-index-header">
+            <div className="project-index-copy">
+              <p className="project-index-eyebrow">Dark Studio Index</p>
+              <h1 className="project-index-title">BU 蓝昊 · pic_video_0515</h1>
+              <p className="project-index-description">继续上次的工作流，或创建新项目进入深色工作室界面。</p>
+            </div>
 
-      {projects.length === 0 ? (
-        <Empty description="暂无项目" style={{ marginTop: 80 }} />
-      ) : (
-        <div className="proj-list">
-          {projects.map((p) => (
-            <Dropdown
-              key={p.path}
-              trigger={['contextMenu']}
-              menu={{
-                items: [
-                  { key: 'open', label: '🚪 打开项目' },
-                  { key: 'folder', label: '📁 打开文件夹' },
-                  { key: 'del', label: '🗑 从列表移除', danger: true },
-                ],
-                onClick: async (i) => {
-                  if (i.key === 'open') nav(`/editor/${encodeURIComponent(p.name)}`);
-                  else if (i.key === 'folder') await openFolder(p.path);
-                  else if (i.key === 'del') {
-                    Modal.confirm({
-                      title: '从列表移除？',
-                      content: `项目: ${p.name}（不会删除磁盘文件）`,
-                      onOk: async () => {
-                        await deleteProject(p.name);
-                        load();
-                      },
-                    });
-                  }
-                },
-              }}
-            >
-              <div className="proj-card" onClick={() => nav(`/editor/${encodeURIComponent(p.name)}`)}>
-                <div className="name">{p.name}</div>
-                <div className="path">{p.path}</div>
+            <div className="project-index-actions">
+              <Button icon={<PlusOutlined />} type="primary" onClick={() => setOpen(true)}>新建项目</Button>
+              <Button icon={<FolderOpenOutlined />} onClick={onOpenAIVIDEO}>打开 AIVIDEO</Button>
+              <Button icon={<SettingOutlined />} onClick={() => nav('/settings')}>API 设置</Button>
+            </div>
+          </header>
+
+          <div className="project-index-summary">
+            <div className="project-index-stat">
+              <span className="project-index-stat__value">{projects.length}</span>
+              <span className="project-index-stat__label">已收录项目</span>
+            </div>
+
+            <div className="project-index-summary__details">
+              <p>项目卡片会保留当前磁盘路径信息，右键可继续打开目录或从索引中移除。</p>
+              <p>当前页只调整视觉层级，不改动项目加载、打开、删除和弹窗行为。</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="project-index-content" aria-label="项目索引">
+          {projects.length === 0 ? (
+            <div className="project-index-empty">
+              <div className="project-index-empty__shell">
+                <Empty description="暂无项目" />
+                <p className="project-index-empty__hint">先创建一个项目，或直接打开 AIVIDEO 目录查看现有素材与工程。</p>
               </div>
-            </Dropdown>
-          ))}
-        </div>
-      )}
+            </div>
+          ) : (
+            <div className="proj-list project-index-grid">
+              {projects.map((p) => (
+                <Dropdown
+                  key={p.path}
+                  trigger={['contextMenu']}
+                  menu={{
+                    items: [
+                      { key: 'open', label: '🚪 打开项目' },
+                      { key: 'folder', label: '📁 打开文件夹' },
+                      { key: 'del', label: '🗑 从列表移除', danger: true },
+                    ],
+                    onClick: async (i) => {
+                      if (i.key === 'open') nav(`/editor/${encodeURIComponent(p.name)}`);
+                      else if (i.key === 'folder') await openFolder(p.path);
+                      else if (i.key === 'del') {
+                        Modal.confirm({
+                          title: '从列表移除？',
+                          content: `项目: ${p.name}（不会删除磁盘文件）`,
+                          onOk: async () => {
+                            await deleteProject(p.name);
+                            load();
+                          },
+                        });
+                      }
+                    },
+                  }}
+                >
+                  <article className="proj-card" onClick={() => nav(`/editor/${encodeURIComponent(p.name)}`)}>
+                    <div className="proj-card__eyebrow">Project Entry</div>
+                    <div className="name">{p.name}</div>
+                    <div className="proj-card__hint">点击进入编辑器，右键查看更多操作</div>
+                    <div className="proj-card__path-shell">
+                      <div className="proj-card__path-label">Path</div>
+                      <div className="path">{p.path}</div>
+                    </div>
+                  </article>
+                </Dropdown>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
 
       <Modal title="新建项目" open={open} onOk={onCreate} onCancel={() => setOpen(false)} okText="创建" cancelText="取消" destroyOnClose>
         <Form form={form} layout="vertical" preserve={false}>
@@ -107,6 +142,6 @@ export default function ProjectListPage() {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </main>
   );
 }
