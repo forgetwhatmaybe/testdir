@@ -123,6 +123,20 @@ class TaskQueue:
         }.get(raw, raw)
 
     @staticmethod
+    def _coerce_bool(value: Any, *, default: bool) -> bool:
+        if value is None:
+            return default
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in {"true", "1", "yes", "y", "on", "是"}:
+                return True
+            if normalized in {"false", "0", "no", "n", "off", "否"}:
+                return False
+        return bool(value)
+
+    @staticmethod
     def _file_to_data_url(path: str) -> str:
         if path.startswith("data:") or path.startswith("http://") or path.startswith("https://"):
             return path
@@ -550,8 +564,8 @@ class TaskQueue:
         loop = asyncio.get_event_loop()
         veo_task_id = await loop.run_in_executor(None, lambda: client.submit(
             d.get("prompt") or "", model=d.get("model", "veo_3_1"), images=images,
-            enhance_prompt=bool(d.get("enhance_prompt", True)),
-            enable_upsample=bool(d.get("enable_upsample", True)),
+            enhance_prompt=self._coerce_bool(d.get("enhance_prompt", True), default=True),
+            enable_upsample=self._coerce_bool(d.get("enable_upsample", True), default=True),
             aspect_ratio=d.get("aspect_ratio", "16:9")))
 
         out_name = (node.get("data") or {}).get("name") or node["id"]
@@ -580,7 +594,7 @@ class TaskQueue:
         duration = int(d.get("duration", 5))
         quality = d.get("quality", "720p")
         aspect_ratio = d.get("aspect_ratio", "16:9")
-        gen_audio = bool(d.get("generate_audio", True))
+        gen_audio = self._coerce_bool(d.get("generate_audio", True), default=True)
 
         loop = asyncio.get_event_loop()
         seedance_task = await loop.run_in_executor(None, lambda: client.submit(

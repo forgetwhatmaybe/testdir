@@ -53,6 +53,12 @@ class TaskQueueContractTests(unittest.TestCase):
         self.assertTrue(payload["image_urls"][0].startswith("data:image/jpeg;base64,"))
         self.assertTrue(payload["image_urls"][1].startswith("data:image/jpeg;base64,"))
 
+    def test_coerces_legacy_yes_no_strings_to_bool(self) -> None:
+        self.assertTrue(TaskQueue._coerce_bool(True, default=False))
+        self.assertTrue(TaskQueue._coerce_bool("是", default=False))
+        self.assertFalse(TaskQueue._coerce_bool("否", default=True))
+        self.assertFalse(TaskQueue._coerce_bool("false", default=True))
+
 
 if __name__ == "__main__":
     unittest.main()
