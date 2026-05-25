@@ -603,8 +603,6 @@ function InnerCanvas({ saveNow, pendingTemplate, onTemplatePlaced, registerLocat
         zoomOnPinch
         panOnDrag={[1, 2]}
         proOptions={{ hideAttribution: true }}
-        noDragClassName="node-row"
-        noPanClassName="node-row"
         fitView
         minZoom={0.1}
         maxZoom={3}

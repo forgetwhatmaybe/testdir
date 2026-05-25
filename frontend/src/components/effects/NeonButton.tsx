@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { forwardRef, type CSSProperties, type ReactNode } from 'react';
 import { Button } from 'antd';
 import './NeonButton.css';
 
@@ -22,13 +22,14 @@ const THEME_MAP: Record<Theme, { border: string; glow: string; text: string }> =
   red:    { border: '#f87171', glow: 'rgba(248, 113, 113, 0.6)',   text: '#fca5a5' },
 };
 
-export default function NeonButton({
+const NeonButton = forwardRef<HTMLButtonElement, Props>(function NeonButton({
   children, theme = 'purple', icon, disabled, loading, style, className, onClick,
-}: Props) {
+}, ref) {
   const t = THEME_MAP[theme];
 
   return (
     <Button
+      ref={ref}
       className={`neon-glow-btn ${className || ''}`}
       icon={icon}
       disabled={disabled}
@@ -44,4 +45,6 @@ export default function NeonButton({
       {children}
     </Button>
   );
-}
+});
+
+export default NeonButton;

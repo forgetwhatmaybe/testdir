@@ -65,15 +65,21 @@ export default function Toolbar({ projectName, saveNow, onOpenQueue, onOpenTempl
 
       <Space className={`toolbar-actions ${mobileMenuOpen ? 'mobile-open' : ''}`} role="group" aria-label="工具栏按钮组">
         <Tooltip title="保存 (Ctrl+S)">
-          <Button className="toolbar-btn" icon={<SaveOutlined />} onClick={saveNow} aria-label="保存项目" />
+          <span>
+            <Button className="toolbar-btn" icon={<SaveOutlined />} onClick={saveNow} aria-label="保存项目" />
+          </span>
         </Tooltip>
 
         {/* 撤销/重做霓虹按钮 */}
         <Tooltip title="撤销 (Ctrl+Z)">
-          <NeonButton theme="purple" icon={<UndoOutlined />} onClick={undo} aria-label="撤销" />
+          <span>
+            <NeonButton theme="purple" icon={<UndoOutlined />} onClick={undo} aria-label="撤销" />
+          </span>
         </Tooltip>
         <Tooltip title="重做 (Ctrl+Y)">
-          <NeonButton theme="blue" icon={<RedoOutlined />} onClick={redo} aria-label="重做" />
+          <span>
+            <NeonButton theme="blue" icon={<RedoOutlined />} onClick={redo} aria-label="重做" />
+          </span>
         </Tooltip>
 
         <Button className="toolbar-btn" icon={<AppstoreAddOutlined />} onClick={onOpenTemplates} aria-label="打开模板库">
@@ -94,7 +100,9 @@ export default function Toolbar({ projectName, saveNow, onOpenQueue, onOpenTempl
           <span className="toolbar-btn-text">停止全部</span>
         </Button>
         <Tooltip title={showHelp ? '隐藏说明面板' : '显示说明面板'}>
-          <Button className="toolbar-btn" icon={showHelp ? <EyeOutlined /> : <EyeInvisibleOutlined />} onClick={onToggleHelp} aria-label={showHelp ? '隐藏帮助' : '显示帮助'} />
+          <span>
+            <Button className="toolbar-btn" icon={showHelp ? <EyeOutlined /> : <EyeInvisibleOutlined />} onClick={onToggleHelp} aria-label={showHelp ? '隐藏帮助' : '显示帮助'} />
+          </span>
         </Tooltip>
         <Button className="toolbar-btn" icon={<SettingOutlined />} onClick={() => nav('/settings')} aria-label="打开 API 设置">
           <span className="toolbar-btn-text">API</span>
