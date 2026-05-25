@@ -137,27 +137,30 @@ body {
 
 /* ===== React Flow 共享基础壳层 ===== */
 .react-flow__handle {
-  width: 8px !important;
-  height: 8px !important;
-  border: 1px solid var(--color-border-strong) !important;
-  background: var(--surface-panel-strong) !important;
-  border-radius: 999px;
-  box-shadow: 0 0 0 2px rgba(8, 11, 17, 0.95);
+  width: 9px !important;
+  height: 9px !important;
+  border: 2px solid var(--color-bg-secondary) !important;
+  background: var(--color-border-default) !important;
+  border-radius: 50%;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
 }
 
 .node-shell {
-  background: linear-gradient(180deg, rgba(20, 27, 36, 0.96), rgba(14, 19, 28, 0.98));
+  background: linear-gradient(135deg, rgba(22,27,34,0.98), rgba(13,17,23,0.96));
   border: 1px solid var(--color-border-default);
   border-radius: var(--radius-lg);
   min-width: 260px;
   padding: 0;
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: visible;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  backdrop-filter: blur(12px);
 }
 
 .node-shell.selected {
-  border-color: var(--color-border-strong);
-  box-shadow: 0 0 0 1px rgba(var(--color-accent-primary-rgb), 0.16), var(--shadow-md);
+  border-color: var(--color-neon-blue);
+  box-shadow: var(--shadow-glow-blue), var(--shadow-md);
 }
 
 .node-title {
@@ -168,8 +171,11 @@ body {
   color: var(--color-text-primary);
   font-size: var(--font-sm);
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.03);
-  border-bottom: 1px solid var(--color-border-subtle);
+  position: relative;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: rgba(48,54,61,0.4);
+  border-bottom: 1px solid var(--color-border-default);
+  letter-spacing: 0.02em;
 }
 
 .node-title .dot {
@@ -184,14 +190,10 @@ body {
 }
 
 .node-progress-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 24px;
-  padding: 1px 8px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--color-text-secondary);
+  background: rgba(63,185,80,0.15);
+  color: var(--color-neon-green);
+  padding: 2px 8px;
+  border-radius: 4px;
   font-size: 11px;
   font-weight: 600;
 }
@@ -266,19 +268,24 @@ body {
   top: 12px; 
   left: 50%; 
   transform: translateX(-50%);
-  padding: 8px 16px; 
-  border-radius: 10px; 
+  padding: 8px 20px; 
+  border-radius: 8px; 
   font-size: 13px; 
   font-weight: 500;
   z-index: 100;
-  background: rgba(17, 22, 31, 0.94);
-  border: 1px solid var(--color-border-default);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid rgba(255,255,255,0.08);
+  animation: bannerSlideIn 0.3s ease-out;
 }
 
-.banner-info  { color: var(--color-text-primary); }
-.banner-success { color: var(--color-success); border-color: rgba(var(--color-success-rgb), 0.28); }
-.banner-failed  { color: var(--color-error); border-color: rgba(var(--color-error-rgb), 0.28); }
+@keyframes bannerSlideIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(-12px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.banner-info  { background: var(--color-neon-blue); color: #0d1117; }
+.banner-success { background: var(--color-neon-green); color: #0d1117; }
+.banner-failed  { background: var(--color-neon-red); color: #ffffff; }
 
 .proj-list {
   display: grid;
@@ -288,17 +295,17 @@ body {
 }
 
 .proj-card {
-  background: linear-gradient(180deg, rgba(23, 29, 40, 0.92), rgba(17, 22, 31, 0.96));
+  background: var(--color-bg-secondary);
   border: 1px solid var(--color-border-default);
-  border-radius: var(--radius-lg);
-  padding: 18px;
+  border-radius: 12px;
+  padding: 20px;
   cursor: pointer;
-  transition: border-color var(--transition-fast), background var(--transition-fast);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .proj-card:hover {
-  border-color: var(--color-border-strong);
-  background: linear-gradient(180deg, rgba(26, 33, 45, 0.96), rgba(19, 24, 34, 0.98));
+  border-color: var(--color-neon-blue);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
 }
 
 .proj-card .name { 
@@ -316,7 +323,7 @@ body {
 
 .help-line {
   font-size: 11px;
-  color: var(--color-text-tertiary);
+  color: #64748b;
   padding: 3px 0;
 }
 
@@ -380,7 +387,7 @@ button.ant-btn-primary:hover {
   display: inline-block;
   width: 3px;
   margin: 0 1px;
-  background: linear-gradient(180deg, var(--color-accent-audio), var(--color-accent-rose));
+  background: linear-gradient(180deg, #00bcd4, #ff4081);
   border-radius: 2px;
   animation: audioSpectrumPulse 0.8s ease-in-out infinite;
 }
@@ -469,7 +476,7 @@ button.ant-btn-primary:hover {
 
 /* ===== 全局渐变边框点缀 ===== */
 .cyber-glow-text {
-  background: linear-gradient(90deg, #d8e1f0, #7aa4d9, #72b091);
+  background: linear-gradient(90deg, #7b1fa2, #2196f3, #4caf50);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
