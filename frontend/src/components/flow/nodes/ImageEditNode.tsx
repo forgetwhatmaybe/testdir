@@ -29,7 +29,8 @@ function expansionArea(d: Data): number {
 
 const ImageEditNode = memo(function ImageEditNode({ id, data, selected }: NodeProps<Data>) {
   const updateNodeData = useFlowStore((s) => s.updateNodeData);
-  const update = (patch: Partial<Data>) => updateNodeData(id, patch as Record<string, unknown>);
+  const updateShared = (patch: Partial<Data>) => updateNodeData(id, patch as Record<string, unknown>, { syncSelectedType: true });
+  const updateLocal = (patch: Partial<Data>) => updateNodeData(id, patch as Record<string, unknown>);
 
   const mode = data.edit_mode || 'kling_expand';
   const area = expansionArea(data);
@@ -77,7 +78,7 @@ const ImageEditNode = memo(function ImageEditNode({ id, data, selected }: NodePr
     const pos = getCanvasPos(e);
     const type: 'paint' | 'erase' = e.button === 2 ? 'erase' : 'paint';
     const newStrokes = [...strokes, { ...pos, type }];
-    update({ mask_strokes: newStrokes });
+    updateLocal({ mask_strokes: newStrokes });
     setIsDrawing(true);
   };
 
@@ -86,7 +87,7 @@ const ImageEditNode = memo(function ImageEditNode({ id, data, selected }: NodePr
     const pos = getCanvasPos(e);
     const type: 'paint' | 'erase' = e.buttons === 2 ? 'erase' : 'paint';
     const newStrokes = [...strokes, { ...pos, type }];
-    update({ mask_strokes: newStrokes });
+    updateLocal({ mask_strokes: newStrokes });
   };
 
   const handleMouseUp = () => setIsDrawing(false);
@@ -95,11 +96,11 @@ const ImageEditNode = memo(function ImageEditNode({ id, data, selected }: NodePr
     e.preventDefault();
   };
 
-  const clearMask = () => update({ mask_strokes: [] });
+  const clearMask = () => updateLocal({ mask_strokes: [] });
 
   const undoLastStroke = () => {
     if (strokes.length === 0) return;
-    update({ mask_strokes: strokes.slice(0, -1) });
+    updateLocal({ mask_strokes: strokes.slice(0, -1) });
   };
 
   const saveMaskToServer = async () => {
@@ -112,7 +113,7 @@ const ImageEditNode = memo(function ImageEditNode({ id, data, selected }: NodePr
         brush_color: [220, 38, 38, Math.round(maskOpacity * 255)],
         original_size: [400, 300],
       });
-      update({ mask_path: r.data.data });
+      updateLocal({ mask_path: r.data.data });
     } catch { /* ignore */ }
   };
 
@@ -121,7 +122,7 @@ const ImageEditNode = memo(function ImageEditNode({ id, data, selected }: NodePr
       <div className="node-row">
         <span className="node-label" style={{ width: 50 }}>模式</span>
         <Select size="small" value={mode} style={{ flex: 1 }}
-          options={IMAGE_EDIT_MODES} onChange={(v) => update({ edit_mode: v })} />
+          options={IMAGE_EDIT_MODES} onChange={(v) => updateShared({ edit_mode: v })} />
       </div>
 
       {mode === 'kling_expand' && (
@@ -133,7 +134,7 @@ const ImageEditNode = memo(function ImageEditNode({ id, data, selected }: NodePr
               }</span>
               <Slider min={0} max={2} step={0.05} style={{ flex: 1 }}
                 value={(data as any)[k] ?? 0}
-                onChange={(v) => update({ [k]: v as number } as any)} />
+                onChange={(v) => updateShared({ [k]: v as number } as any)} />
               <span className="node-cfg-display">{((data as any)[k] ?? 0).toFixed(2)}</span>
             </div>
           ))}
@@ -141,7 +142,7 @@ const ImageEditNode = memo(function ImageEditNode({ id, data, selected }: NodePr
             <div className="node-warn">面积 {area.toFixed(2)}x &gt; 3x，执行时将自动裁剪</div>
           )}
           <Input.TextArea size="small" rows={1} placeholder="提示词（可空）"
-            value={data.prompt || ''} onChange={(e) => update({ prompt: e.target.value })} />
+            value={data.prompt || ''} onChange={(e) => updateShared({ prompt: e.target.value })} />
         </>
       )}
 
@@ -150,12 +151,12 @@ const ImageEditNode = memo(function ImageEditNode({ id, data, selected }: NodePr
           <div className="node-row">
             <span className="node-label" style={{ width: 50 }}>分辨率</span>
             <Select size="small" value={data.resolution || '4k'} style={{ flex: 1 }}
-              options={[{ value: '4k', label: '4K' }, { value: '8k', label: '8K' }]} onChange={(v) => update({ resolution: v })} />
+              options={[{ value: '4k', label: '4K' }, { value: '8k', label: '8K' }]} onChange={(v) => updateShared({ resolution: v })} />
           </div>
           <div className="node-row">
             <span className="node-label" style={{ width: 50 }}>锐化</span>
             <Slider min={0} max={100} step={1} style={{ flex: 1 }}
-              value={data.scale ?? 50} onChange={(v) => update({ scale: v as number })} />
+              value={data.scale ?? 50} onChange={(v) => updateShared({ scale: v as number })} />
             <span className="node-cfg-display">{data.scale ?? 50}</span>
           </div>
         </>
@@ -166,10 +167,10 @@ const ImageEditNode = memo(function ImageEditNode({ id, data, selected }: NodePr
           <div className="node-row">
             <span className="node-label" style={{ width: 50 }}>Seed</span>
             <InputNumber size="small" value={data.seed ?? 101} min={-1} max={999999} style={{ flex: 1 }}
-              onChange={(v) => update({ seed: v as number })} />
+              onChange={(v) => updateShared({ seed: v as number })} />
           </div>
           <Input.TextArea size="small" rows={2} maxLength={120} showCount placeholder="提示词（必填，≤120字）"
-            value={data.prompt || ''} onChange={(e) => update({ prompt: e.target.value })} />
+            value={data.prompt || ''} onChange={(e) => updateShared({ prompt: e.target.value })} />
 
           {/* ---- 蒙版绘制区域 ---- */}
           <div style={{ marginTop: 8, borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 6 }}>
@@ -180,7 +181,7 @@ const ImageEditNode = memo(function ImageEditNode({ id, data, selected }: NodePr
                   <Slider
                     min={4} max={60} step={2}
                     value={brushSize}
-                    onChange={(v) => update({ mask_brush_size: v as number })}
+                    onChange={(v) => updateLocal({ mask_brush_size: v as number })}
                     style={{ width: 60, margin: 0 }}
                     tooltip={{ formatter: (v) => `${v}px` }}
                   />
@@ -189,7 +190,7 @@ const ImageEditNode = memo(function ImageEditNode({ id, data, selected }: NodePr
                   <Slider
                     min={0.1} max={1} step={0.05}
                     value={maskOpacity}
-                    onChange={(v) => update({ mask_opacity: v as number })}
+                    onChange={(v) => updateLocal({ mask_opacity: v as number })}
                     style={{ width: 50, margin: 0 }}
                     tooltip={{ formatter: (v) => `${Math.round(v! * 100)}%` }}
                   />

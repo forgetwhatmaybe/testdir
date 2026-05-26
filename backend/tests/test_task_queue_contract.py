@@ -69,6 +69,18 @@ class TaskQueueContractTests(unittest.TestCase):
             "gemini-2.5-flash-preview-image-generation",
         )
 
+    def test_output_name_appends_batch_suffix_when_needed(self) -> None:
+        node = {"id": "output_1", "data": {"name": "主输出"}}
+
+        self.assertEqual(
+            TaskQueue._resolve_output_name(node, {"output_suffix": ""}),
+            "主输出",
+        )
+        self.assertEqual(
+            TaskQueue._resolve_output_name(node, {"output_suffix": "_2"}),
+            "主输出_2",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

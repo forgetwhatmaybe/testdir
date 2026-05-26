@@ -26,7 +26,7 @@ const Seedance2Node = memo(function Seedance2Node({ id, data, selected }: NodePr
   const edges = useFlowStore((s) => s.edges);
   const updateNodeData = useFlowStore((s) => s.updateNodeData);
   const mode = normalizeGenerationMode(data.mode, data.generation_mode, 'reference') as 'reference' | 'image2video' | 'first_last';
-  const update = (patch: Partial<Data>) => updateNodeData(id, patch as Record<string, unknown>);
+  const update = (patch: Partial<Data>) => updateNodeData(id, patch as Record<string, unknown>, { syncSelectedType: true });
 
   const tokens = estimateTokens(data.prompt || '');
   const node = { id, data, type: 'seedance2', position: { x: 0, y: 0 } } as any;

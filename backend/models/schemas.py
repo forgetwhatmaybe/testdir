@@ -54,6 +54,7 @@ class RunRequest(BaseModel):
     project: str
     workflow: Workflow
     output_node_ids: list[str]
+    output_counts: dict[str, int] = Field(default_factory=dict)
 
 
 class TaskInfo(BaseModel):
@@ -67,6 +68,8 @@ class TaskInfo(BaseModel):
     message: str = ""
     result_path: Optional[str] = None
     thumbnail_path: Optional[str] = None
+    batch_index: Optional[int] = None
+    batch_total: Optional[int] = None
 
 
 class ApiKeyEntry(BaseModel):

@@ -20,7 +20,7 @@ type Props = {
 export default function ThumbStrip({ nodeId, refNodeIds, mediaType = 'image', handle = 'in_refs', size = 40, cols = 4 }: Props) {
   const project = useProjectStore((s) => s.current);
   const nodes = useFlowStore((s) => s.nodes);
-  const setNodes = useFlowStore((s) => s.setNodes);
+  const updateNodeData = useFlowStore((s) => s.updateNodeData);
   const pushHistory = useFlowStore((s) => s.pushHistory);
   const [drag, setDrag] = useState<{ from: number | null; over: number | null }>({ from: null, over: null });
   const stripRef = useRef<HTMLDivElement>(null);
@@ -29,9 +29,7 @@ export default function ThumbStrip({ nodeId, refNodeIds, mediaType = 'image', ha
 
   const setOrder = (next: string[]) => {
     const field = refOrderField(handle);
-    setNodes(nodes.map((n) => (n.id === nodeId
-      ? { ...n, data: { ...(n.data as object), [field]: next } }
-      : n)));
+    updateNodeData(nodeId, { [field]: next });
     pushHistory();
   };
 

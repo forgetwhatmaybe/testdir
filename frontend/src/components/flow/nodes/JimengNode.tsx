@@ -19,7 +19,7 @@ type Data = {
 
 const JimengNode = memo(function JimengNode({ id, data, selected }: NodeProps<Data>) {
   const updateNodeData = useFlowStore((s) => s.updateNodeData);
-  const update = (patch: Partial<Data>) => updateNodeData(id, patch as Record<string, unknown>);
+  const update = (patch: Partial<Data>) => updateNodeData(id, patch as Record<string, unknown>, { syncSelectedType: true });
 
   const model = data.model || 'jimeng_v30';
   const flAllowed = jimengAllowFirstLast(model);

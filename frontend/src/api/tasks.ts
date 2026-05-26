@@ -12,6 +12,8 @@ export interface TaskInfo {
   message: string;
   result_path?: string | null;
   thumbnail_path?: string | null;
+  batch_index?: number;
+  batch_total?: number;
 }
 
 export interface RunTasksResponse {
@@ -25,11 +27,21 @@ export interface WorkflowPayload {
   edges: Record<string, unknown>[];
 }
 
-export function runTasks(project: string, workflow: WorkflowPayload, output_node_ids: string[]) {
+export interface RunTasksOptions {
+  outputCounts?: Record<string, number>;
+}
+
+export function runTasks(
+  project: string,
+  workflow: WorkflowPayload,
+  output_node_ids: string[],
+  options: RunTasksOptions = {},
+) {
   return postJson<RunTasksResponse>('/tasks/run', {
     project,
     workflow: normalizeWorkflowPayload(workflow),
     output_node_ids,
+    output_counts: options.outputCounts || {},
   });
 }
 

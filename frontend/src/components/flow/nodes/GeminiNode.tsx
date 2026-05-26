@@ -20,7 +20,7 @@ type Data = {
 const GeminiNode = memo(function GeminiNode({ id, data, selected }: NodeProps<Data>) {
   const edges = useFlowStore((s) => s.edges);
   const updateNodeData = useFlowStore((s) => s.updateNodeData);
-  const update = (patch: Partial<Data>) => updateNodeData(id, patch as Record<string, unknown>);
+  const update = (patch: Partial<Data>) => updateNodeData(id, patch as Record<string, unknown>, { syncSelectedType: true });
 
   const model = data.model || GEMINI_MODELS[0];
   const refIds = orderedRefs({ id, data, type: 'gemini', position: { x: 0, y: 0 } } as any, 'in_refs', edges);

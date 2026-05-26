@@ -19,7 +19,7 @@ type Data = {
 
 const KlingNode = memo(function KlingNode({ id, data, selected }: NodeProps<Data>) {
   const updateNodeData = useFlowStore((s) => s.updateNodeData);
-  const update = (patch: Partial<Data>) => updateNodeData(id, patch as Record<string, unknown>);
+  const update = (patch: Partial<Data>) => updateNodeData(id, patch as Record<string, unknown>, { syncSelectedType: true });
 
   const model = data.model || 'kling-v3';
   const resolution = data.resolution || '1080p';

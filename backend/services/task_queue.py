@@ -60,30 +60,47 @@ class TaskQueue:
     def snapshot(self) -> list[dict]:
         return list(self.tasks.values())
 
-    async def submit(self, project: str, workflow: dict, output_node_id: str) -> str:
+    async def submit(
+        self,
+        project: str,
+        workflow: dict,
+        output_node_id: str,
+        *,
+        batch_index: int = 0,
+        batch_total: int = 1,
+    ) -> str:
         key = (project, output_node_id)
-        existing = self._running_outputs.get(key)
-        if existing and self.tasks.get(existing, {}).get("status") in ("queued", "running"):
-            return existing
+        if batch_total == 1:
+            existing = self._running_outputs.get(key)
+            if existing and self.tasks.get(existing, {}).get("status") in ("queued", "running"):
+                return existing
 
         node = next((n for n in workflow["nodes"] if n["id"] == output_node_id), None)
         if not node:
             raise ValueError(f"未找到输出节点 {output_node_id}")
         name = (node.get("data") or {}).get("name") or output_node_id
         kind = self._guess_kind(workflow, output_node_id)
+        output_suffix = "" if batch_total == 1 else f"_{batch_index + 1}"
+        display_name = name if batch_total == 1 else f"{name} #{batch_index + 1}"
 
         task_id = str(uuid.uuid4())
         task = {
             "id": task_id, "project": project, "output_node_id": output_node_id,
-            "name": name, "kind": kind, "status": "queued",
+            "name": display_name, "kind": kind, "status": "queued",
             "progress": 0, "message": "已加入队列",
             "result_path": None, "thumbnail_path": None, "error": None,
+            "batch_index": batch_index,
+            "batch_total": batch_total,
+            "output_suffix": output_suffix,
             # 链式执行扩展字段
             "node_statuses": {},  # node_id → { status, progress }
             "subgraph_order": [],  # 拓扑序节点列表
         }
+        if batch_total > 1:
+            task["message"] = f"已加入队列 ({batch_index + 1}/{batch_total})"
         self.tasks[task_id] = task
-        self._running_outputs[key] = task_id
+        if batch_total == 1:
+            self._running_outputs[key] = task_id
         await ws_manager.broadcast({"type": "task_update", "task": task})
 
         async_task = asyncio.create_task(self._run(task_id, project, workflow, output_node_id))
@@ -112,6 +129,12 @@ class TaskQueue:
             for k, v in list(self._running_outputs.items()):
                 if v == tid:
                     self._running_outputs.pop(k, None)
+
+    @staticmethod
+    def _resolve_output_name(node: dict[str, Any], task: dict[str, Any]) -> str:
+        base_name = (node.get("data") or {}).get("name") or node["id"]
+        suffix = task.get("output_suffix") or ""
+        return f"{base_name}{suffix}" if suffix else base_name
 
     @staticmethod
     def _normalized_generation_mode(data: dict[str, Any], *, default: str) -> str:
@@ -410,9 +433,9 @@ class TaskQueue:
                         elif t == "storyboard":
                             outputs[nid] = await self._run_storyboard(project_path, node, inputs, task)
                         elif t == "text_display":
-                            outputs[nid] = await self._finalize_text(project_path, node, inputs)
+                            outputs[nid] = await self._finalize_text(project_path, node, inputs, task)
                         elif t == "output":
-                            outputs[nid] = await self._finalize_output(project_path, node, inputs)
+                            outputs[nid] = await self._finalize_output(project_path, node, inputs, task)
 
                         # 节点执行成功
                         task["node_statuses"][nid] = {"status": "success", "progress": 100}
@@ -498,7 +521,7 @@ class TaskQueue:
         task_id = await loop.run_in_executor(None, lambda: client.submit_image_to_video(
             first, prompt, model=model, duration=duration, mode=mode,
             cfg_scale=cfg_scale, tail_image=last))
-        out_name = (node.get("data") or {}).get("name") or node["id"]
+        out_name = self._resolve_output_name(node, task)
         return await self._poll_video(client.query_video, task_id, project_path, out_name, task)
 
     async def _run_jimeng(self, project_path: Path, node, inputs, task) -> str:
@@ -524,7 +547,7 @@ class TaskQueue:
         task_id = await loop.run_in_executor(None, lambda: client.submit_image_to_video(
             first, prompt, model=model, video_duration=duration, seed=seed,
             tail_image=last, resolution=resolution))
-        out_name = (node.get("data") or {}).get("name") or node["id"]
+        out_name = self._resolve_output_name(node, task)
         return await self._poll_video(client.query_task, task_id, project_path, out_name, task)
 
     async def _run_gemini(self, project_path: Path, node, inputs, task, workflow) -> str:
@@ -575,7 +598,7 @@ class TaskQueue:
             enable_upsample=self._coerce_bool(d.get("enable_upsample", True), default=True),
             aspect_ratio=d.get("aspect_ratio", "16:9")))
 
-        out_name = (node.get("data") or {}).get("name") or node["id"]
+        out_name = self._resolve_output_name(node, task)
         target = project_path / f"{out_name}.mp4"
         for _ in range(2400):
             if task["status"] == "cancelled":
@@ -612,7 +635,7 @@ class TaskQueue:
             duration=duration, quality=quality, aspect_ratio=aspect_ratio,
             generate_audio=gen_audio))
 
-        out_name = (node.get("data") or {}).get("name") or node["id"]
+        out_name = self._resolve_output_name(node, task)
         target = project_path / f"{out_name}.mp4"
         for _ in range(2400):
             if task["status"] == "cancelled":
@@ -632,7 +655,7 @@ class TaskQueue:
         d = node["data"]
         edit_mode = d.get("edit_mode", "kling_expand")
         loop = asyncio.get_event_loop()
-        out_name = (node.get("data") or {}).get("name") or node["id"]
+        out_name = self._resolve_output_name(node, task)
         target = project_path / "素材库" / f"{out_name}_edited.png"
         if edit_mode == "kling_expand":
             keys = crypto.get_keys("kling")
@@ -788,9 +811,8 @@ class TaskQueue:
                 result_paths.append(part_path)
         return result_paths[0] if result_paths else ""
 
-    async def _finalize_text(self, project_path: Path, node, inputs) -> Optional[str]:
-        d = node["data"]
-        name = d.get("name") or node["id"]
+    async def _finalize_text(self, project_path: Path, node, inputs, task) -> Optional[str]:
+        name = self._resolve_output_name(node, task)
         upstream = (inputs.get("in_text") or [None])[0]
         if not isinstance(upstream, str):
             return None
@@ -798,9 +820,8 @@ class TaskQueue:
         target.write_text(upstream, encoding="utf-8")
         return str(target)
 
-    async def _finalize_output(self, project_path: Path, node, inputs) -> Optional[str]:
-        d = node["data"]
-        name = d.get("name") or node["id"]
+    async def _finalize_output(self, project_path: Path, node, inputs, task) -> Optional[str]:
+        name = self._resolve_output_name(node, task)
         upstream = (inputs.get("in") or [None])[0]
         if not upstream:
             return None

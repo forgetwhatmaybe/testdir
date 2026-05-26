@@ -6,7 +6,7 @@ import { useFlowStore } from '../store/flowStore';
 import { useProjectStore } from '../store/projectStore';
 import { useTaskStore, type NodeStatus } from '../store/taskStore';
 import { connectTasksWS, type WSMessage } from '../api/ws';
-import { listTasks, runTasks } from '../api/tasks';
+import { listTasks } from '../api/tasks';
 import { addHistory, type HistoryEntry } from '../api/history';
 import Toolbar from '../components/flow/Toolbar';
 import NodePanel from '../components/flow/NodePanel';
@@ -20,6 +20,7 @@ import HistoryDialog from '../components/dialogs/HistoryDialog';
 import ErrorBoundary from '../components/ErrorBoundary';
 import type { TemplateData } from '../components/flow/FlowCanvas';
 import { normalizeWorkflowPayload } from '../utils/workflowDefaults';
+import { runWorkflowTargets } from '../utils/nodeExecution';
 
 export default function EditorPage() {
   const { name } = useParams<{ name: string }>();
@@ -130,19 +131,12 @@ export default function EditorPage() {
 
   const handleExecuteWorkflow = useCallback(() => {
     const state = useFlowStore.getState();
-    const outputNodes = state.nodes.filter(n => n.type === 'output' || n.type === 'text_display');
-    if (outputNodes.length === 0) {
-      message.warning('请先添加输出节点 (Output / TextDisplay)');
-      return;
-    }
-    const outputIds = outputNodes.map(n => n.id);
-    runTasks(projectName, {
-      version: 2,
-      viewport: state.viewport,
-      nodes: state.nodes,
-      edges: state.edges,
-    }, outputIds).then((res) => {
-      message.success(`已提交 ${res.task_ids?.length || 1} 个任务`);
+    runWorkflowTargets(projectName, state, { mode: 'all' }).then(({ targetCount, taskCount }) => {
+      if (!targetCount) {
+        message.warning('请先添加输出节点 (Output / TextDisplay)');
+        return;
+      }
+      message.success(`已提交 ${taskCount} 个任务${targetCount > 1 ? `（${targetCount} 个输出节点）` : ''}`);
     }).catch((e) => message.error(e.message));
   }, [projectName, message]);
 

@@ -21,7 +21,7 @@ type Data = {
 const TextVisionNode = memo(function TextVisionNode({ id, data, selected }: NodeProps<Data>) {
   const edges = useFlowStore((s) => s.edges);
   const updateNodeData = useFlowStore((s) => s.updateNodeData);
-  const update = (patch: Partial<Data>) => updateNodeData(id, patch as Record<string, unknown>);
+  const update = (patch: Partial<Data>) => updateNodeData(id, patch as Record<string, unknown>, { syncSelectedType: true });
 
   const model = data.model || 'gpt-5.4';
   const thinkingOpts = thinkingOptions(model);

@@ -8,8 +8,9 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useFlowStore } from '../../store/flowStore';
 import { useTaskStore } from '../../store/taskStore';
-import { runTasks, cancelAll } from '../../api/tasks';
+import { cancelAll } from '../../api/tasks';
 import NeonButton from '../effects/NeonButton';
+import { runWorkflowTargets } from '../../utils/nodeExecution';
 
 type Props = {
   projectName: string;
@@ -31,13 +32,14 @@ export default function Toolbar({ projectName, saveNow, onOpenQueue, onOpenTempl
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const onRunSelected = async () => {
-    const { nodes, edges, viewport } = useFlowStore.getState();
-    const selected = nodes.filter((n) => n.selected && (n.type === 'output' || n.type === 'text_display'));
-    const targets = selected.length ? selected : nodes.filter((n) => n.type === 'output' || n.type === 'text_display');
-    if (!targets.length) { message.warning('画布上没有输出节点'); return; }
+    const snapshot = useFlowStore.getState();
     try {
-      await runTasks(projectName, { version: 2, viewport, nodes, edges }, targets.map((n) => n.id));
-      message.success(`已加入 ${targets.length} 个任务`);
+      const { targetCount, taskCount } = await runWorkflowTargets(projectName, snapshot, { mode: 'selected-or-all' });
+      if (!targetCount) {
+        message.warning('画布上没有输出节点');
+        return;
+      }
+      message.success(`已加入 ${taskCount} 个任务${targetCount > 1 ? `（${targetCount} 个输出节点）` : ''}`);
     } catch (e: unknown) { message.error((e as Error).message); }
   };
 

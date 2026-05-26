@@ -8,6 +8,10 @@ export type FlowSnapshot = {
   viewport: Viewport;
 };
 
+export type UpdateNodeDataOptions = {
+  syncSelectedType?: boolean;
+};
+
 type FlowState = FlowSnapshot & {
   setNodes(nodes: Node[]): void;
   setEdges(edges: Edge[]): void;
@@ -29,7 +33,7 @@ type FlowState = FlowSnapshot & {
   deleteNode(nodeId: string): void;
   duplicateNode(nodeId: string): void;
   // 高效更新节点数据（避免全量 nodes.map）
-  updateNodeData(nodeId: string, patch: Record<string, unknown>): void;
+  updateNodeData(nodeId: string, patch: Record<string, unknown>, options?: UpdateNodeDataOptions): void;
 };
 
 export const useFlowStore = create<FlowState>((set, get) => ({
@@ -103,10 +107,32 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     set({ nodes: [...nodes, dup] });
   },
 
-  updateNodeData: (nodeId, patch) =>
-    set((state) => ({
-      nodes: state.nodes.map((n) =>
-        n.id === nodeId ? { ...n, data: { ...(n.data as Record<string, unknown>), ...patch } } : n,
-      ),
-    })),
+  updateNodeData: (nodeId, patch, options) =>
+    set((state) => {
+      const sourceNode = state.nodes.find((node) => node.id === nodeId);
+      if (!sourceNode) return state;
+
+      const targetIds = new Set<string>([nodeId]);
+      if (options?.syncSelectedType) {
+        state.nodes.forEach((node) => {
+          if (node.selected && node.type === sourceNode.type) {
+            targetIds.add(node.id);
+          }
+        });
+      }
+
+      let changed = false;
+      const nextNodes = state.nodes.map((node) => {
+        if (!targetIds.has(node.id)) return node;
+
+        const currentData = (node.data as Record<string, unknown>) || {};
+        const hasPatchDiff = Object.entries(patch).some(([key, value]) => currentData[key] !== value);
+        if (!hasPatchDiff) return node;
+
+        changed = true;
+        return { ...node, data: { ...currentData, ...patch } };
+      });
+
+      return changed ? { nodes: nextNodes } : state;
+    }),
 }));

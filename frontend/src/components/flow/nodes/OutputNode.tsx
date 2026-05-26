@@ -1,18 +1,28 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Handle, Position, type NodeProps } from 'reactflow';
-import { Input, App as AntApp, Dropdown } from 'antd';
+import { Input, App as AntApp, Dropdown, Select } from 'antd';
 import NodeShell from './shared/NodeShell';
 import { useFlowStore } from '../../../store/flowStore';
 import { useProjectStore } from '../../../store/projectStore';
 import { useTaskStore } from '../../../store/taskStore';
 import { rawUrl, thumbnailUrl, openFolder, openWithSystem } from '../../../api/files';
-import { runTasks } from '../../../api/tasks';
+import type { TaskInfo } from '../../../api/tasks';
+import { clampOutputBatchCount, runWorkflowTargets } from '../../../utils/nodeExecution';
+
+type OutputResultItem = {
+  path: string;
+  thumbnail_path?: string | null;
+  batch_index?: number | null;
+  batch_total?: number | null;
+};
 
 type Data = {
   name?: string;
   result_path?: string | null;
   thumbnail_path?: string | null;
   media_type?: 'image' | 'video' | 'auto';
+  batch_count?: number;
+  result_items?: OutputResultItem[];
 };
 
 const VIDEO_EXTS = ['.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv', '.webm'];
@@ -27,43 +37,105 @@ function pickMediaType(p?: string | null): 'image' | 'video' | null {
   return null;
 }
 
+function fileNameFromPath(path?: string | null): string {
+  return (path || '').replace(/\\/g, '/').split('/').pop() || '';
+}
+
+function normalizeResultItem(item: unknown): OutputResultItem | null {
+  if (!item || typeof item !== 'object') return null;
+  const candidate = item as Record<string, unknown>;
+  const path = typeof candidate.path === 'string' ? candidate.path : null;
+  if (!path) return null;
+  return {
+    path,
+    thumbnail_path: typeof candidate.thumbnail_path === 'string' ? candidate.thumbnail_path : null,
+    batch_index: typeof candidate.batch_index === 'number' ? candidate.batch_index : null,
+    batch_total: typeof candidate.batch_total === 'number' ? candidate.batch_total : null,
+  };
+}
+
+function mergeResultItems(data: Data, tasks: TaskInfo[]): OutputResultItem[] {
+  const merged = new Map<string, OutputResultItem>();
+  const addItem = (item: OutputResultItem | null) => {
+    if (!item?.path) return;
+    const existing = merged.get(item.path) || { path: item.path };
+    merged.set(item.path, { ...existing, ...item });
+  };
+
+  (data.result_items || []).forEach((item) => addItem(normalizeResultItem(item)));
+  if (data.result_path) {
+    addItem({ path: data.result_path, thumbnail_path: data.thumbnail_path || null });
+  }
+
+  tasks
+    .filter((task) => task.status === 'done' && task.result_path)
+    .sort((left, right) => (left.batch_index ?? 0) - (right.batch_index ?? 0))
+    .forEach((task) => {
+      addItem({
+        path: task.result_path!,
+        thumbnail_path: task.thumbnail_path || null,
+        batch_index: task.batch_index ?? null,
+        batch_total: task.batch_total ?? null,
+      });
+    });
+
+  return Array.from(merged.values());
+}
+
 const OutputNode = memo(function OutputNode({ id, data, selected }: NodeProps<Data>) {
   const { message } = AntApp.useApp();
-  const nodes = useFlowStore((s) => s.nodes);
-  const edges = useFlowStore((s) => s.edges);
-  const setNodes = useFlowStore((s) => s.setNodes);
+  const updateNodeData = useFlowStore((s) => s.updateNodeData);
   const project = useProjectStore((s) => s.current);
   const tasks = useTaskStore((s) => s.tasks);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
 
-  const update = (patch: Partial<Data>) =>
-    setNodes(nodes.map((n) => (n.id === id ? { ...n, data: { ...(n.data as object), ...patch } } : n)));
+  const update = (patch: Partial<Data>) => updateNodeData(id, patch as Record<string, unknown>);
+  const updateShared = (patch: Partial<Data>) => updateNodeData(id, patch as Record<string, unknown>, { syncSelectedType: true });
 
-  const liveTask = useMemo(
-    () => Object.values(tasks).find((t) => t.output_node_id === id),
+  const matchingTasks = useMemo(
+    () => Object.values(tasks).filter((task) => task.output_node_id === id),
     [tasks, id],
   );
-  // 任务完成时回填 result_path 到 data（用于持久化）
-  useEffect(() => {
-    if (liveTask?.status === 'done' && liveTask.result_path && liveTask.result_path !== data.result_path) {
-      const cur = useFlowStore.getState().nodes;
-      useFlowStore.setState({
-        nodes: cur.map((n) => n.id === id
-          ? { ...n, data: { ...(n.data as object), result_path: liveTask.result_path, thumbnail_path: liveTask.thumbnail_path } }
-          : n),
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [liveTask?.status, liveTask?.result_path]);
+  const liveTask = useMemo(
+    () => matchingTasks.find((task) => ['queued', 'running'].includes(task.status))
+      || matchingTasks.find((task) => task.status === 'failed')
+      || matchingTasks[matchingTasks.length - 1],
+    [matchingTasks],
+  );
+  const resultItems = useMemo(() => mergeResultItems(data, matchingTasks), [data, matchingTasks]);
 
-  const resultPath = liveTask?.result_path || data.result_path;
+  useEffect(() => {
+    if (!resultItems.length) return;
+    const latest = resultItems[resultItems.length - 1];
+    const currentItemsKey = JSON.stringify((data.result_items || []).map((item) => normalizeResultItem(item)));
+    const nextItemsKey = JSON.stringify(resultItems);
+    if (currentItemsKey === nextItemsKey
+      && (data.result_path || null) === latest.path
+      && (data.thumbnail_path || null) === (latest.thumbnail_path || null)) {
+      return;
+    }
+    update({
+      result_items: resultItems,
+      result_path: latest.path,
+      thumbnail_path: latest.thumbnail_path || null,
+    });
+  }, [data.result_items, data.result_path, data.thumbnail_path, resultItems]);
+
+  useEffect(() => {
+    setActiveIndex(resultItems.length ? resultItems.length - 1 : 0);
+  }, [resultItems.length]);
+
+  const currentResult = resultItems[activeIndex] || resultItems[resultItems.length - 1] || null;
+  const resultPath = currentResult?.path || liveTask?.result_path || data.result_path;
   const mediaType = pickMediaType(resultPath);
   const isVideo = mediaType === 'video';
   const isImage = mediaType === 'image';
 
-  const fileName = (resultPath || '').replace(/\\/g, '/').split('/').pop() || '';
+  const fileName = fileNameFromPath(resultPath);
   const projectPathFromName = project ? `${project}/${fileName}` : '';
+  const batchCount = clampOutputBatchCount(data.batch_count);
 
   const thumbSrc = (() => {
     if (!project || !fileName) return null;
@@ -75,8 +147,29 @@ const OutputNode = memo(function OutputNode({ id, data, selected }: NodeProps<Da
   const onRun = async () => {
     if (!project) return;
     try {
-      await runTasks(project, { version: 2, viewport: { x: 0, y: 0, zoom: 1 }, nodes, edges }, [id]);
-      message.success('已加入任务队列');
+      const snapshot = useFlowStore.getState();
+      const { targetCount, taskCount } = await runWorkflowTargets(project, snapshot, {
+        clickedNodeId: id,
+        mode: 'clicked-or-selected',
+      });
+      if (!targetCount) {
+        message.warning('画布上没有可执行的输出节点');
+        return;
+      }
+      message.success(`已加入 ${taskCount} 个任务${targetCount > 1 ? `（${targetCount} 个输出节点）` : ''}`);
+    } catch (e: any) { message.error(e.message); }
+  };
+
+  const onRunAll = async () => {
+    if (!project) return;
+    try {
+      const snapshot = useFlowStore.getState();
+      const { targetCount, taskCount } = await runWorkflowTargets(project, snapshot, { mode: 'all' });
+      if (!targetCount) {
+        message.warning('画布上没有可执行的输出节点');
+        return;
+      }
+      message.success(`已加入 ${taskCount} 个任务${targetCount > 1 ? `（${targetCount} 个输出节点）` : ''}`);
     } catch (e: any) { message.error(e.message); }
   };
 
@@ -88,7 +181,7 @@ const OutputNode = memo(function OutputNode({ id, data, selected }: NodeProps<Da
   };
 
   const items = [
-    { key: 'run', label: '▶ 执行当前节点' },
+    { key: 'run', label: '▶ 执行当前节点（多选时执行全部选中）' },
     { key: 'run_all', label: '▶ 执行工作流' },
     ...(resultPath ? [
       { key: 'copy_path', label: '📋 复制输出文件路径' },
@@ -124,16 +217,37 @@ const OutputNode = memo(function OutputNode({ id, data, selected }: NodeProps<Da
     : liveTask?.status === 'done' ? '#388e3c'
     : '#90a4ae';
 
+  const resultThumb = (item: OutputResultItem) => {
+    if (!project) return null;
+    const itemFileName = fileNameFromPath(item.path);
+    if (!itemFileName) return null;
+    const itemType = pickMediaType(item.path);
+    if (itemType === 'video') return thumbnailUrl(project, itemFileName);
+    if (itemType === 'image') return rawUrl(project, itemFileName);
+    return null;
+  };
+
   return (
     <NodeShell type="output" selected={selected} title="视频/图片输出" color={statusColor} variant="output" outputId={id} nodeId={id}>
       <Dropdown trigger={['contextMenu']} menu={{
         items, onClick: async (e) => {
-          if (e.key === 'run' || e.key === 'run_all') onRun();
+          if (e.key === 'run') onRun();
+          else if (e.key === 'run_all') onRunAll();
           else if (e.key === 'copy_path') onCopyPath();
           else if (e.key === 'folder' && resultPath) await openFolder(projectPathFromName);
         }
       }}>
         <div>
+          <div className="node-row">
+            <span className="node-label" style={{ width: 62 }}>批量输出</span>
+            <Select
+              size="small"
+              value={batchCount}
+              style={{ flex: 1 }}
+              options={Array.from({ length: 10 }, (_, index) => ({ value: index + 1, label: `${index + 1} 个` }))}
+              onChange={(value) => updateShared({ batch_count: value })}
+            />
+          </div>
           <Input size="small" placeholder="输出名称"
             value={data.name || ''} onChange={(e) => update({ name: e.target.value })} />
           <div
@@ -166,6 +280,25 @@ const OutputNode = memo(function OutputNode({ id, data, selected }: NodeProps<Da
               </div>
             )}
           </div>
+          {resultItems.length > 1 && (
+            <div className="output-result-strip">
+              {resultItems.map((item, index) => {
+                const thumb = resultThumb(item);
+                const isActive = index === activeIndex;
+                return (
+                  <button
+                    key={`${item.path}-${index}`}
+                    type="button"
+                    className={`output-result-thumb${isActive ? ' active' : ''}`}
+                    onClick={() => setActiveIndex(index)}
+                    title={`结果 ${index + 1}`}
+                  >
+                    {thumb ? <img src={thumb} loading="lazy" alt={`result-${index + 1}`} /> : <span>{index + 1}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </Dropdown>
 

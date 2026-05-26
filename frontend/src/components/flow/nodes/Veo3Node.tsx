@@ -17,7 +17,7 @@ type Data = {
 
 const Veo3Node = memo(function Veo3Node({ id, data, selected }: NodeProps<Data>) {
   const updateNodeData = useFlowStore((s) => s.updateNodeData);
-  const update = (patch: Partial<Data>) => updateNodeData(id, patch as Record<string, unknown>);
+  const update = (patch: Partial<Data>) => updateNodeData(id, patch as Record<string, unknown>, { syncSelectedType: true });
 
   const model = data.model || 'veo_3_1';
   const mode = normalizeGenerationMode(data.mode, data.generation_mode, 'image2video') as 'image2video' | 'first_last';

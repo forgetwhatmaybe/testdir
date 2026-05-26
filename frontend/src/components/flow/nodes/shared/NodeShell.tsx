@@ -1,6 +1,21 @@
 import { useMemo, type CSSProperties, type ReactNode, memo } from 'react';
 import { useTaskStore, type NodeStatus } from '../../../../store/taskStore';
 
+const INTERACTIVE_SELECTOR = [
+  '.ant-select',
+  '.ant-input',
+  '.ant-input-number',
+  '.ant-slider',
+  '.ant-switch',
+  '.ant-btn',
+  'input',
+  'textarea',
+  'button',
+  'video',
+  'canvas',
+  '.output-result-strip',
+].join(', ');
+
 /** 节点类型变体 → 标题栏渐变色 class */
 type NodeVariant =
   | 'image' | 'video' | 'audio' | 'text'
@@ -73,6 +88,12 @@ const STATUS_STYLES: Record<NodeStatus['status'], {
 const NodeShell = memo(function NodeShell({ selected, title, color, variant, outputId, nodeId, children }: Props) {
   const tasks = useTaskStore((s) => s.tasks);
   const nodeStatuses = useTaskStore((s) => s.nodeStatuses);
+  const stopInteractivePropagation = (event: { target: EventTarget | null; stopPropagation(): void }) => {
+    if (!(event.target instanceof Element)) return;
+    if (event.target.closest(INTERACTIVE_SELECTOR)) {
+      event.stopPropagation();
+    }
+  };
   const isHighPerformance = useMemo(() => {
     // 高性能模式：节点数 > 50 时移除复杂效果
     const nodeCount = Object.keys(nodeStatuses).length;
@@ -119,7 +140,14 @@ const NodeShell = memo(function NodeShell({ selected, title, color, variant, out
   };
 
   return (
-    <div className={`${cls.join(' ')} ${st.borderClass}`} style={style}>
+    <div
+      className={`${cls.join(' ')} ${st.borderClass}`}
+      style={style}
+      onMouseDownCapture={stopInteractivePropagation}
+      onClickCapture={stopInteractivePropagation}
+      onDoubleClickCapture={stopInteractivePropagation}
+      onWheelCapture={stopInteractivePropagation}
+    >
       <div className={`node-title${variant ? ` node-title-bar-${variant}` : ''}`}>
         {/* 状态指示灯 */}
         <span

@@ -460,7 +460,7 @@ function InnerCanvas({ saveNow, pendingTemplate, onTemplatePlaced, registerLocat
   }, [connectMenu, createNode, setEdges, setNodes, pushHistory, message]);
 
   const onNodeClick = useCallback((e: React.MouseEvent, node: Node) => {
-    if (e.ctrlKey || e.metaKey) {
+    if (e.altKey) {
       e.preventDefault();
       const ids = collectConnected(node.id, useFlowStore.getState().nodes, useFlowStore.getState().edges);
       setNodes(useFlowStore.getState().nodes.map((n) => ({ ...n, selected: ids.has(n.id) })));
