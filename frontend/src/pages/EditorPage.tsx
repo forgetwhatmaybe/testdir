@@ -19,6 +19,7 @@ import TemplateDialog from '../components/dialogs/TemplateDialog';
 import HistoryDialog from '../components/dialogs/HistoryDialog';
 import ErrorBoundary from '../components/ErrorBoundary';
 import type { TemplateData } from '../components/flow/FlowCanvas';
+import { normalizeWorkflowPayload } from '../utils/workflowDefaults';
 
 export default function EditorPage() {
   const { name } = useParams<{ name: string }>();
@@ -44,10 +45,11 @@ export default function EditorPage() {
   useEffect(() => {
     if (!projectName) return;
     loadWorkflow(projectName).then((wf) => {
+      const normalized = normalizeWorkflowPayload(wf);
       loadSnapshot({
-        nodes: (wf.nodes || []) as any,
-        edges: (wf.edges || []) as any,
-        viewport: wf.viewport || { x: 0, y: 0, zoom: 1 },
+        nodes: (normalized.nodes || []) as any,
+        edges: (normalized.edges || []) as any,
+        viewport: normalized.viewport || { x: 0, y: 0, zoom: 1 },
       });
     }).catch((e) => message.error(e.message));
   }, [projectName, loadSnapshot, message]);

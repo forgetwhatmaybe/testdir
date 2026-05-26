@@ -15,6 +15,7 @@ import { collectConnected } from '../../utils/upstreamWalker';
 import { useShortcuts } from '../../hooks/useShortcuts';
 import { useProjectStore } from '../../store/projectStore';
 import { uploadFile } from '../../api/files';
+import { normalizeNodeDataDefaults } from '../../utils/workflowDefaults';
 
 export interface TemplateNode {
   id: string;
@@ -290,24 +291,6 @@ function InnerCanvas({ saveNow, pendingTemplate, onTemplatePlaced, registerLocat
     });
   }, [rfInstance, registerLocate, setNodes]);
 
-  // 初始化时仅打一次 mask_output 补丁（避免用 nodes 依赖触发 setNodes 形成回流）
-  useEffect(() => {
-    const { nodes, setNodes } = useFlowStore.getState();
-    let dirty = false;
-    const fixed = nodes.map((n) => {
-      if (n.type === 'image' && (n.data as any)?.mask_path && !(n.data as any)?.has_mask_output) {
-        dirty = true;
-        return { ...n, data: { ...(n.data as any), has_mask_output: true } };
-      }
-      if (n.type === 'gemini' && !(n.data as any)?.model) {
-        dirty = true;
-        return { ...n, data: { ...(n.data as any), model: GEMINI_MODELS[0] } };
-      }
-      return n;
-    });
-    if (dirty) setNodes(fixed);
-  }, []);
-
   useEffect(() => {
     if (!nodes.length) return;
     const missingDragHandle = nodes.some((node) => node.dragHandle !== NODE_DRAG_HANDLE);
@@ -318,16 +301,15 @@ function InnerCanvas({ saveNow, pendingTemplate, onTemplatePlaced, registerLocat
   const createNode = useCallback((type: string, x: number, y: number, data: Record<string, unknown> = {}): Node => {
     const id = uniqueId('n');
     const nextData: Record<string, unknown> = { ...data };
-    if (type === 'gemini' && !nextData.model) nextData.model = GEMINI_MODELS[0];
     if (type === 'output' && !nextData.name) nextData.name = nextOutputName(useFlowStore.getState().nodes);
     if (type === 'text_display' && !nextData.name) nextData.name = nextTextOutputName(useFlowStore.getState().nodes);
-    return {
+    return normalizeNodeDataDefaults({
       id,
       type,
       position: { x, y },
       data: nextData,
       dragHandle: NODE_DRAG_HANDLE,
-    };
+    });
   }, []);
 
   const onConnect = useCallback((conn: Connection) => {
@@ -512,12 +494,12 @@ function InnerCanvas({ saveNow, pendingTemplate, onTemplatePlaced, registerLocat
         data.name = nextTextOutputName(allNodes);
         allNodes.push({ id: newId, type: n.type, position: { x: 0, y: 0 }, data } as Node);
       }
-      return {
+      return normalizeNodeDataDefaults({
         id: newId, type: n.type,
         position: { x: pos.x + ((n.position?.x ?? 0) - minX), y: pos.y + ((n.position?.y ?? 0) - minY) },
         data,
         dragHandle: NODE_DRAG_HANDLE,
-      };
+      });
     });
     const newEdges: Edge[] = (tpl.edges || []).map((eg) => ({
       id: `e_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,

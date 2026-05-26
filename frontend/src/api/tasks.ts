@@ -1,4 +1,5 @@
 import { getJson, postJson } from './client';
+import { normalizeWorkflowPayload } from '../utils/workflowDefaults';
 
 export interface TaskInfo {
   id: string;
@@ -25,7 +26,11 @@ export interface WorkflowPayload {
 }
 
 export function runTasks(project: string, workflow: WorkflowPayload, output_node_ids: string[]) {
-  return postJson<RunTasksResponse>('/tasks/run', { project, workflow, output_node_ids });
+  return postJson<RunTasksResponse>('/tasks/run', {
+    project,
+    workflow: normalizeWorkflowPayload(workflow),
+    output_node_ids,
+  });
 }
 
 export function listTasks() {

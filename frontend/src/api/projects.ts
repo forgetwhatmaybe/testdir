@@ -1,4 +1,5 @@
 import { api, getJson, postJson, putJson, delJson } from './client';
+import { normalizeWorkflowPayload } from '../utils/workflowDefaults';
 
 export interface ProjectInfo { name: string; path: string; disk: string; }
 
@@ -27,5 +28,5 @@ export function loadWorkflow(name: string) {
 }
 
 export function saveWorkflow(name: string, workflow: WorkflowData) {
-  return putJson<void>(`/projects/${encodeURIComponent(name)}/workflow`, workflow);
+  return putJson<void>(`/projects/${encodeURIComponent(name)}/workflow`, normalizeWorkflowPayload(workflow));
 }
