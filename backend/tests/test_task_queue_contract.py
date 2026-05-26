@@ -59,6 +59,16 @@ class TaskQueueContractTests(unittest.TestCase):
         self.assertFalse(TaskQueue._coerce_bool("否", default=True))
         self.assertFalse(TaskQueue._coerce_bool("false", default=True))
 
+    def test_gemini_default_model_matches_frontend_first_option(self) -> None:
+        self.assertEqual(
+            TaskQueue._resolve_gemini_model({}),
+            "gemini-3.1-flash-image-preview",
+        )
+        self.assertEqual(
+            TaskQueue._resolve_gemini_model({"model": "gemini-2.5-flash-preview-image-generation"}),
+            "gemini-2.5-flash-preview-image-generation",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

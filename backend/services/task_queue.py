@@ -137,6 +137,13 @@ class TaskQueue:
         return bool(value)
 
     @staticmethod
+    def _resolve_gemini_model(data: dict[str, Any]) -> str:
+        model = str((data or {}).get("model") or "").strip()
+        if model:
+            return model
+        return "gemini-3.1-flash-image-preview"
+
+    @staticmethod
     def _file_to_data_url(path: str) -> str:
         if path.startswith("data:") or path.startswith("http://") or path.startswith("https://"):
             return path
@@ -543,7 +550,7 @@ class TaskQueue:
 
         def _gen():
             return client.generate_image(d.get("prompt") or "", image_paths=refs,
-                                          model=d.get("model", "gemini-2.5-flash-preview-image-generation"),
+                                          model=self._resolve_gemini_model(d),
                                           aspect_ratio=d.get("aspect_ratio", "1:1"),
                                           image_size=d.get("image_size", ""),
                                           save_path=save_path)

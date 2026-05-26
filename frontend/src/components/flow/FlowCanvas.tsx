@@ -10,6 +10,7 @@ import { nodeTypes, nodeMeta } from './nodes/index';
 import DataFlowEdge from './edges/DataFlowEdge';
 import { NODE_INPUT_KINDS, NODE_OUTPUT_KINDS, isValidConnection } from '../../utils/connectionRules';
 import { uniqueId, nextOutputName, nextTextOutputName } from '../../utils/nodeNaming';
+import { GEMINI_MODELS } from '../../utils/modelOptions';
 import { collectConnected } from '../../utils/upstreamWalker';
 import { useShortcuts } from '../../hooks/useShortcuts';
 import { useProjectStore } from '../../store/projectStore';
@@ -298,6 +299,10 @@ function InnerCanvas({ saveNow, pendingTemplate, onTemplatePlaced, registerLocat
         dirty = true;
         return { ...n, data: { ...(n.data as any), has_mask_output: true } };
       }
+      if (n.type === 'gemini' && !(n.data as any)?.model) {
+        dirty = true;
+        return { ...n, data: { ...(n.data as any), model: GEMINI_MODELS[0] } };
+      }
       return n;
     });
     if (dirty) setNodes(fixed);
@@ -313,6 +318,7 @@ function InnerCanvas({ saveNow, pendingTemplate, onTemplatePlaced, registerLocat
   const createNode = useCallback((type: string, x: number, y: number, data: Record<string, unknown> = {}): Node => {
     const id = uniqueId('n');
     const nextData: Record<string, unknown> = { ...data };
+    if (type === 'gemini' && !nextData.model) nextData.model = GEMINI_MODELS[0];
     if (type === 'output' && !nextData.name) nextData.name = nextOutputName(useFlowStore.getState().nodes);
     if (type === 'text_display' && !nextData.name) nextData.name = nextTextOutputName(useFlowStore.getState().nodes);
     return {
